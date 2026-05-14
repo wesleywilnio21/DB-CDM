@@ -7,6 +7,9 @@ use App\Models\Tag;
 use App\Models\Event;
 use App\Http\Requests\StoreContactRequest;
 use App\Http\Requests\UpdateContactRequest;
+use App\Exports\ContactsExport;
+use App\Imports\ContactsImport;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 
 class ContactController extends Controller
@@ -61,6 +64,8 @@ class ContactController extends Controller
             $contact->events()->sync($request->events);
         }
 
+        ActivityLogger::log('created', $contact, "Created contact: {$contact->name}");
+
         return redirect()->route('contacts.index')->with('success', 'Contact created successfully.');
     }
 
@@ -80,18 +85,47 @@ class ContactController extends Controller
 
     public function update(UpdateContactRequest $request, Contact $contact)
     {
+        $oldData = $contact->only(['name', 'phone', 'email', 'organization']);
         $contact->update($request->validated());
         
         $contact->tags()->sync($request->tags ?? []);
         $contact->events()->sync($request->events ?? []);
+
+        ActivityLogger::log('updated', $contact, "Updated contact: {$contact->name}", [
+            'old' => $oldData,
+            'new' => $contact->only(['name', 'phone', 'email', 'organization'])
+        ]);
 
         return redirect()->route('contacts.index')->with('success', 'Contact updated successfully.');
     }
 
     public function destroy(Contact $contact)
     {
+        $name = $contact->name;
+        ActivityLogger::log('deleted', $contact, "Deleted contact: {$name}");
         $contact->delete();
         return redirect()->route('contacts.index')->with('success', 'Contact deleted successfully.');
+    }
+
+    // --- Excel Features ---
+
+    public function export()
+    {
+        return (new ContactsExport())->download();
+    }
+
+    public function downloadTemplate()
+    {
+        return (new ContactsExport())->template();
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate(['file' => 'required|file|mimes:xlsx,xls|max:5000']);
+        
+        $count = (new ContactsImport())->upload($request->file('file')->getRealPath());
+        
+        return back()->with('success', "Successfully imported {$count} contacts.");
     }
 
     public function quickAddToEvent(Request $request, Contact $contact)

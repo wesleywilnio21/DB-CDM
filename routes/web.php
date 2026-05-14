@@ -11,6 +11,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\BloodDonorController;
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\UserController;
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -30,6 +32,13 @@ Route::middleware('auth')->group(function () {
     Route::post('blood-donors/{bloodDonor}/donate', [BloodDonorController::class, 'storeDonation'])->name('blood-donors.donate');
     Route::post('blood-donors/store-with-contact', [BloodDonorController::class, 'storeWithContact'])->name('blood-donors.store-with-contact');
     Route::resource('blood-donors', BloodDonorController::class);
+
+    // Excel & Activity Log
+    Route::get('/contacts-export', [ContactController::class, 'export'])->name('contacts.export');
+    Route::get('/contacts-template', [ContactController::class, 'downloadTemplate'])->name('contacts.template');
+    Route::post('/contacts-import', [ContactController::class, 'import'])->name('contacts.import');
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);
 });
 
 require __DIR__ . '/auth.php';

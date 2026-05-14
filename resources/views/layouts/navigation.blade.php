@@ -24,6 +24,14 @@
                     <x-nav-link :href="route('blood-donors.index')" :active="request()->routeIs('blood-donors.*')">
                         {{ __('Blood Donors') }}
                     </x-nav-link>
+                    @if(Auth::user()->isAdmin())
+                    <x-nav-link :href="route('activity-logs.index')" :active="request()->routeIs('activity-logs.*')">
+                        {{ __('Activity Log') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                        {{ __('User Management') }}
+                    </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -88,6 +96,14 @@
             <x-responsive-nav-link :href="route('blood-donors.index')" :active="request()->routeIs('blood-donors.*')">
                 {{ __('Blood Donors') }}
             </x-responsive-nav-link>
+            @if(Auth::user()->isAdmin())
+            <x-responsive-nav-link :href="route('activity-logs.index')" :active="request()->routeIs('activity-logs.*')">
+                {{ __('Activity Log') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                {{ __('User Management') }}
+            </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->
