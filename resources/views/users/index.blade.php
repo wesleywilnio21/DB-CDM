@@ -8,7 +8,7 @@
     <div class="py-10" x-data="{ 
         showCreate: {{ $errors->any() && !old('_method') ? 'true' : 'false' }}, 
         showEdit: {{ $errors->any() && old('_method') == 'PATCH' ? 'true' : 'false' }}, 
-        editUser: { id: '', name: '', email: '', role: '' }
+        editUser: { id: '', name: '', username: '', email: '', role: '' }
     }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
@@ -59,22 +59,22 @@
                                                             <span class="ml-2 text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full uppercase font-black">You</span>
                                                         @endif
                                                     </div>
-                                                    <div class="text-xs text-gray-700 font-bold">{{ $user->email }}</div>
+                                                    <div class="text-xs text-gray-700 font-bold">{{ $user->username }}</div>
+                                                    <div class="text-xs text-gray-500">{{ $user->email }}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
                                                 {{ $user->role === 'super_admin' ? 'bg-amber-100 text-amber-800 border border-amber-200' : '' }}
-                                                {{ $user->role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : '' }}
-                                                {{ $user->role === 'staff' ? 'bg-gray-100 text-gray-800 border border-gray-200' : '' }}">
+                                                {{ $user->role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : '' }}">
                                                 {{ str_replace('_', ' ', $user->role) }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold">
                                             <div class="flex items-center justify-end gap-3">
                                                 <button @click="
-                                                        editUser = { id: {{ $user->id }}, name: '{{ addslashes($user->name) }}', email: '{{ $user->email }}', role: '{{ $user->role }}' }; 
+                                                        editUser = { id: {{ $user->id }}, name: '{{ addslashes($user->name) }}', username: '{{ addslashes($user->username) }}', email: '{{ $user->email }}', role: '{{ $user->role }}' }; 
                                                         showEdit = true;
                                                     " 
                                                     class="text-indigo-600 hover:text-indigo-900">Edit</button>
@@ -120,14 +120,18 @@
                             <x-input-error :messages="$errors->get('name')" />
                         </div>
                         <div>
-                            <x-input-label for="email" :value="__('Email')" class="text-gray-900 font-bold" />
-                            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full rounded-xl" :value="old('email')" required />
+                            <x-input-label for="username" :value="__('Username')" class="text-gray-900 font-bold" />
+                            <x-text-input id="username" name="username" type="text" class="mt-1 block w-full rounded-xl" :value="old('username')" required />
+                            <x-input-error :messages="$errors->get('username')" />
+                        </div>
+                        <div>
+                            <x-input-label for="email" :value="__('Email (Optional)')" class="text-gray-900 font-bold" />
+                            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full rounded-xl" :value="old('email')" />
                             <x-input-error :messages="$errors->get('email')" />
                         </div>
                         <div>
                             <x-input-label for="role" :value="__('Role')" class="text-gray-900 font-bold" />
                             <select name="role" class="mt-1 block w-full border-gray-300 rounded-xl focus:border-gray-900 focus:ring-0">
-                                <option value="staff">Staff</option>
                                 <option value="admin">Admin</option>
                                 @if(Auth::user()->isSuperAdmin())
                                     <option value="super_admin">Super Admin</option>
@@ -166,15 +170,21 @@
                         <div>
                             <x-input-label for="edit_name" :value="__('Name')" class="text-gray-900 font-bold" />
                             <x-text-input id="edit_name" name="name" type="text" class="mt-1 block w-full rounded-xl" x-model="editUser.name" required />
+                            <x-input-error :messages="$errors->get('name')" />
                         </div>
                         <div>
-                            <x-input-label for="edit_email" :value="__('Email')" class="text-gray-900 font-bold" />
-                            <x-text-input id="edit_email" name="email" type="email" class="mt-1 block w-full rounded-xl" x-model="editUser.email" required />
+                            <x-input-label for="edit_username" :value="__('Username')" class="text-gray-900 font-bold" />
+                            <x-text-input id="edit_username" name="username" type="text" class="mt-1 block w-full rounded-xl" x-model="editUser.username" required />
+                            <x-input-error :messages="$errors->get('username')" />
+                        </div>
+                        <div>
+                            <x-input-label for="edit_email" :value="__('Email (Optional)')" class="text-gray-900 font-bold" />
+                            <x-text-input id="edit_email" name="email" type="email" class="mt-1 block w-full rounded-xl" x-model="editUser.email" />
+                            <x-input-error :messages="$errors->get('email')" />
                         </div>
                         <div>
                             <x-input-label for="edit_role" :value="__('Role')" class="text-gray-900 font-bold" />
                             <select name="role" x-model="editUser.role" class="mt-1 block w-full border-gray-300 rounded-xl focus:border-gray-900 focus:ring-0">
-                                <option value="staff">Staff</option>
                                 <option value="admin">Admin</option>
                                 <option value="super_admin" :disabled="editUser.role === 'super_admin' && !{{ Auth::user()->isSuperAdmin() ? 'true' : 'false' }}">Super Admin</option>
                             </select>

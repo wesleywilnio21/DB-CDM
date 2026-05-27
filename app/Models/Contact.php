@@ -10,12 +10,28 @@ class Contact extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'phone', 'email', 'address', 'organization', 'notes', 'birthdate'
+        'name', 'email', 'address', 'organization', 'notes', 'birthdate'
     ];
 
     protected $casts = [
         'birthdate' => 'date',
     ];
+
+    public function phones()
+    {
+        return $this->hasMany(ContactPhone::class);
+    }
+
+    public function getPrimaryPhoneAttribute()
+    {
+        $primary = $this->phones->where('is_primary', true)->first();
+        return $primary ? $primary->phone : ($this->phones->first()->phone ?? null);
+    }
+
+    public function getPhoneAttribute()
+    {
+        return $this->primary_phone;
+    }
 
     public function events()
     {

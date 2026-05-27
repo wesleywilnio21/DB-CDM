@@ -22,7 +22,9 @@ class ContactController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                  ->orWhereHas('phones', function($pq) use ($search) {
+                      $pq->where('phone', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -54,8 +56,15 @@ class ContactController extends Controller
 
     public function store(StoreContactRequest $request)
     {
-        $contact = Contact::create($request->validated());
+        $contact = Contact::create($request->except('phones'));
         
+        if ($request->has('phones')) {
+            $phonesData = array_map(function($phone, $index) {
+                return ['phone' => $phone, 'is_primary' => $index === 0];
+            }, $request->phones, array_keys($request->phones));
+            $contact->phones()->createMany($phonesData);
+        }
+
         if ($request->has('tags')) {
             $contact->tags()->sync($request->tags);
         }
@@ -85,15 +94,28 @@ class ContactController extends Controller
 
     public function update(UpdateContactRequest $request, Contact $contact)
     {
-        $oldData = $contact->only(['name', 'phone', 'email', 'organization']);
-        $contact->update($request->validated());
+        $oldData = $contact->only(['name', 'email', 'organization']);
+        $oldData['phones'] = $contact->phones->pluck('phone')->toArray();
         
+        $contact->update($request->except('phones'));
+        
+        if ($request->has('phones')) {
+            $contact->phones()->delete();
+            $phonesData = array_map(function($phone, $index) {
+                return ['phone' => $phone, 'is_primary' => $index === 0];
+            }, $request->phones, array_keys($request->phones));
+            $contact->phones()->createMany($phonesData);
+        }
+
         $contact->tags()->sync($request->tags ?? []);
         $contact->events()->sync($request->events ?? []);
 
+        $newData = $contact->only(['name', 'email', 'organization']);
+        $newData['phones'] = $request->phones;
+
         ActivityLogger::log('updated', $contact, "Updated contact: {$contact->name}", [
             'old' => $oldData,
-            'new' => $contact->only(['name', 'phone', 'email', 'organization'])
+            'new' => $newData
         ]);
 
         return redirect()->route('contacts.index')->with('success', 'Contact updated successfully.');
@@ -121,7 +143,7 @@ class ContactController extends Controller
 
     public function import(Request $request)
     {
-        $request->validate(['file' => 'required|file|mimes:xlsx,xls|max:5000']);
+        $request->validate(['file' => 'required|file|mimes:csv,txt|max:5000']);
         
         $count = (new ContactsImport())->upload($request->file('file')->getRealPath());
         

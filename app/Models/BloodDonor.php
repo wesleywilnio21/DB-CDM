@@ -29,8 +29,13 @@ class BloodDonor extends Model
         return Carbon::parse($this->last_donation_date)->addDays(60);
     }
 
-    public function donationHistories()
+
+
+    public function donationSessions()
     {
-        return $this->hasMany(DonationHistory::class)->orderBy('donated_at', 'desc');
+        return $this->belongsToMany(DonationSession::class, 'donation_session_donors')
+            ->withPivot('donated_at', 'location', 'notes', 'id')
+            ->withTimestamps()
+            ->orderByPivot('donated_at', 'desc');
     }
 }

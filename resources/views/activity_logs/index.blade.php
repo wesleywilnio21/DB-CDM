@@ -81,7 +81,49 @@
                                         @if($log->metadata)
                                             <details class="mt-2 text-xs text-gray-700 cursor-pointer">
                                                 <summary class="hover:text-gray-900 font-bold underline">View Changes</summary>
-                                                <pre class="mt-2 p-3 bg-gray-100 rounded-lg overflow-x-auto text-gray-900 border border-gray-200">{{ json_encode($log->metadata, JSON_PRETTY_PRINT) }}</pre>
+                                                @if(isset($log->metadata['old']) && isset($log->metadata['new']))
+                                                    <div class="mt-3 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                                        <table class="min-w-full divide-y divide-gray-200">
+                                                            <thead class="bg-gray-50">
+                                                                <tr>
+                                                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Field</th>
+                                                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Old Value</th>
+                                                                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">New Value</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody class="bg-white divide-y divide-gray-100">
+                                                                @foreach($log->metadata['new'] as $key => $newValue)
+                                                                    @php
+                                                                        $oldValue = $log->metadata['old'][$key] ?? '-';
+                                                                        $isChanged = json_encode($oldValue) !== json_encode($newValue);
+                                                                    @endphp
+                                                                    @if($isChanged)
+                                                                        <tr>
+                                                                            <td class="px-4 py-3 text-xs font-bold text-gray-900 uppercase">{{ str_replace('_', ' ', $key) }}</td>
+                                                                            <td class="px-4 py-3 text-xs text-red-600 line-through bg-red-50/50">
+                                                                                {{ is_array($oldValue) ? implode(', ', $oldValue) : ($oldValue ?: '-') }}
+                                                                            </td>
+                                                                            <td class="px-4 py-3 text-xs text-green-600 bg-green-50/50 font-bold">
+                                                                                {{ is_array($newValue) ? implode(', ', $newValue) : ($newValue ?: '-') }}
+                                                                            </td>
+                                                                        </tr>
+                                                                    @endif
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                @else
+                                                    <div class="mt-3 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                                                        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                                                            @foreach($log->metadata as $key => $value)
+                                                                <div class="sm:col-span-1">
+                                                                    <dt class="text-xs font-bold text-gray-500 uppercase">{{ str_replace('_', ' ', $key) }}</dt>
+                                                                    <dd class="mt-1 text-sm text-gray-900">{{ is_array($value) ? implode(', ', $value) : ($value ?: '-') }}</dd>
+                                                                </div>
+                                                            @endforeach
+                                                        </dl>
+                                                    </div>
+                                                @endif
                                             </details>
                                         @endif
                                     </td>

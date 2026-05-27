@@ -11,7 +11,13 @@
         showImport: false,
         showEvents: false,
         showTags: {{ $errors->has('tag_name') ? 'true' : 'false' }},
-        editContact: { id: '', name: '', phone: '', email: '', organization: '', address: '', notes: '', birthdate: '', tags: [] },
+        showView: false,
+        showDelete: false,
+        viewContactDetails: {},
+        deleteUrl: '',
+        deleteContactName: '',
+        editContact: { id: '', name: '', phones: [''], email: '', organization: '', address: '', notes: '', birthdate: '', tags: [] },
+        createPhones: [''],
         eventsContact: { id: '', name: '', events: [] }
     }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -35,10 +41,12 @@
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                             Import
                         </button>
+                        @if(Auth::user()->isSuperAdmin())
                         <button @click="showTags = true" class="inline-flex items-center justify-center px-4 py-2.5 bg-white border border-gray-200 rounded-full font-medium text-sm text-gray-700 hover:bg-gray-50 focus:outline-none transition-all shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
                             Manage Tags
                         </button>
+                        @endif
                         <button @click="showCreate = true" class="inline-flex items-center justify-center px-5 py-2.5 bg-gray-900 border border-transparent rounded-full font-medium text-sm text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                             Add New Contact
@@ -106,7 +114,10 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $contact->phone }}</div>
+                                            <div class="text-sm text-gray-900">{{ $contact->primary_phone }}</div>
+                                            @if($contact->phones->count() > 1)
+                                                <div class="text-xs text-indigo-500 font-medium">+{{ $contact->phones->count() - 1 }} more</div>
+                                            @endif
                                             <div class="text-xs text-gray-500">{{ $contact->email ?: 'No Email' }}</div>
                                         </td>
                                         <td class="px-6 py-4">
@@ -129,10 +140,18 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div class="flex items-center justify-end gap-3">
-                                                <a href="{{ route('contacts.show', $contact) }}" class="text-gray-500 hover:text-gray-900 transition-colors">View</a>
+                                                <button @click="
+                                                        viewContactDetails = {{ json_encode($contact->only(['name', 'email', 'organization', 'address', 'notes'])) }};
+                                                        viewContactDetails.phones = {{ json_encode($contact->phones->pluck('phone')) }};
+                                                        viewContactDetails.birthdate = '{{ $contact->birthdate ? $contact->birthdate->format('M d, Y') : '-' }}';
+                                                        viewContactDetails.tags = {{ json_encode($contact->tags->pluck('name')) }};
+                                                        showView = true;
+                                                    " class="text-gray-500 hover:text-gray-900 transition-colors">View</button>
                                                 
                                                 <button @click="
-                                                        editContact = {{ json_encode($contact->only(['id','name','phone','email','organization','address','notes','birthdate'])) }}; 
+                                                        editContact = {{ json_encode($contact->only(['id','name','email','organization','address','notes','birthdate'])) }}; 
+                                                        editContact.phones = {{ json_encode($contact->phones->pluck('phone')) }};
+                                                        if(editContact.phones.length === 0) editContact.phones = [''];
                                                         editContact.tags = {{ json_encode($contact->tags->pluck('id')) }};
                                                         if(editContact.birthdate) editContact.birthdate = editContact.birthdate.split('T')[0];
                                                         showEdit = true;
@@ -141,11 +160,11 @@
                                                     Edit
                                                 </button>
 
-                                                <form action="{{ route('contacts.destroy', $contact) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this contact?');" class="inline-block">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-red-500 hover:text-red-700 transition-colors">Delete</button>
-                                                </form>
+                                                <button @click="
+                                                        deleteUrl = '{{ route('contacts.destroy', $contact) }}';
+                                                        deleteContactName = '{{ addslashes($contact->name) }}';
+                                                        showDelete = true;
+                                                    " class="text-red-500 hover:text-red-700 transition-colors">Delete</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -257,10 +276,18 @@
                                     <x-input-error :messages="$errors->get('name')" class="mt-1" />
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone <span class="text-red-500">*</span></label>
-                                    <input type="text" name="phone" value="{{ old('phone') }}" required class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-gray-900" />
-                                    <x-input-error :messages="$errors->get('phone')" class="mt-1" />
-                                </div>
+                                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phones <span class="text-red-500">*</span></label>
+                                                    <template x-for="(phone, index) in createPhones" :key="index">
+                                                        <div class="flex items-center gap-2 mb-2">
+                                                            <input type="text" :name="'phones['+index+']'" x-model="createPhones[index]" required class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-gray-900" placeholder="Phone Number" />
+                                                            <button type="button" @click="if(createPhones.length > 1) createPhones.splice(index, 1)" class="p-2 text-red-500 hover:text-red-700" x-show="createPhones.length > 1">
+                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                            </button>
+                                                        </div>
+                                                    </template>
+                                                    <button type="button" @click="createPhones.push('')" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">+ Add another phone</button>
+                                                    <x-input-error :messages="$errors->get('phones')" class="mt-1" />
+                                                </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                                     <input type="email" name="email" value="{{ old('email') }}" class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-gray-900" />
@@ -338,9 +365,17 @@
                                     <x-input-error :messages="$errors->get('name')" class="mt-1" />
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone <span class="text-red-500">*</span></label>
-                                    <input type="text" name="phone" x-model="editContact.phone" required class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-gray-900" />
-                                    <x-input-error :messages="$errors->get('phone')" class="mt-1" />
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phones <span class="text-red-500">*</span></label>
+                                    <template x-for="(phone, index) in editContact.phones" :key="index">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <input type="text" :name="'phones['+index+']'" x-model="editContact.phones[index]" required class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-gray-900" />
+                                            <button type="button" @click="if(editContact.phones.length > 1) editContact.phones.splice(index, 1)" class="p-2 text-red-500 hover:text-red-700" x-show="editContact.phones.length > 1">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <button type="button" @click="editContact.phones.push('')" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">+ Add another phone</button>
+                                    <x-input-error :messages="$errors->get('phones')" class="mt-1" />
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -455,29 +490,28 @@
                             </button>
                         </div>
 
-                        <form method="POST" action="{{ route('contacts.import') }}" enctype="multipart/form-data">
+                        <form action="{{ route('contacts.import') }}" method="POST" enctype="multipart/form-data">
                             @csrf
-                            <div class="mb-6">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Excel File (.xlsx, .xls)</label>
-                                <input type="file" name="file" accept=".xlsx,.xls" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-900 file:text-white hover:file:bg-gray-800 transition-all cursor-pointer border border-gray-200 rounded-2xl p-1" />
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select CSV File</label>
+                                <input type="file" name="file" accept=".csv" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-colors" />
+                                <x-input-error :messages="$errors->get('file')" class="mt-2" />
                             </div>
-
-                            <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 mb-6">
+                            <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
+                                <a href="{{ route('contacts.template') }}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Download CSV Template</a>
+                            </div>
+                            
+                            <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 mb-6 mt-4">
                                 <h4 class="text-sm font-bold text-blue-900 mb-1">Instructions:</h4>
                                 <ul class="text-xs text-blue-800 space-y-1 list-disc list-inside">
                                     <li>Please use our standard template for best results.</li>
-                                    <li>Existing contacts will be updated based on their <strong>Phone Number</strong>.</li>
-                                    <li>Required columns: <strong>Name</strong> and <strong>Phone</strong>.</li>
+                                    <li>Existing contacts will be updated based on their <strong>Name</strong>.</li>
+                                    <li>Multiple phones can be separated by commas (e.g., 0812, 0813).</li>
                                 </ul>
-                                <a href="{{ route('contacts.template') }}" class="mt-3 inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800">
-                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0L8 8m4-4v12"></path></svg>
-                                    Download Template
-                                </a>
                             </div>
-
-                            <div class="flex justify-end gap-3">
-                                <button type="button" @click="showImport = false" class="px-5 py-2.5 border border-gray-200 rounded-full font-medium text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
-                                <button type="submit" class="px-5 py-2.5 bg-gray-900 border border-transparent rounded-full font-medium text-sm text-white hover:bg-gray-800 shadow-sm">Start Import</button>
+                            <div class="mt-8 flex justify-end gap-3">
+                                <button type="button" @click="showImport = false" class="px-5 py-2.5 border border-gray-200 rounded-full font-medium text-sm text-gray-700 hover:bg-gray-50 focus:outline-none transition-all shadow-sm">Cancel</button>
+                                <button type="submit" class="px-5 py-2.5 bg-gray-900 border border-transparent rounded-full font-medium text-sm text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all shadow-sm">Upload & Import</button>
                             </div>
                         </form>
                     </div>
@@ -485,5 +519,99 @@
             </div>
         </div>
 
+        <!-- View Contact Modal -->
+        <div x-show="showView" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+                <div x-show="showView" x-transition.opacity class="fixed inset-0 transition-opacity" aria-hidden="true">
+                    <div class="absolute inset-0 bg-gray-900 opacity-50"></div>
+                </div>
+
+                <div x-show="showView" x-transition.scale.origin.bottom class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full">
+                    <div class="bg-white px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
+                        <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                            <h3 class="text-2xl font-bold text-gray-900 tracking-tight" x-text="viewContactDetails.name"></h3>
+                            <button @click="showView = false" type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none bg-gray-50 rounded-full p-2">
+                                <span class="sr-only">Close</span>
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
+                            <div>
+                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Phones</h4>
+                                <div class="text-sm font-medium text-gray-900">
+                                    <template x-for="p in viewContactDetails.phones">
+                                        <div x-text="p"></div>
+                                    </template>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Email</h4>
+                                <p class="text-sm font-medium text-gray-900" x-text="viewContactDetails.email || '-'"></p>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Organization</h4>
+                                <p class="text-sm font-medium text-gray-900" x-text="viewContactDetails.organization || '-'"></p>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Birthdate</h4>
+                                <p class="text-sm font-medium text-gray-900" x-text="viewContactDetails.birthdate"></p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Address</h4>
+                                <p class="text-sm font-medium text-gray-900" x-text="viewContactDetails.address || '-'"></p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Notes</h4>
+                                <p class="text-sm font-medium text-gray-900 whitespace-pre-line" x-text="viewContactDetails.notes || '-'"></p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tags</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-if="viewContactDetails.tags && viewContactDetails.tags.length === 0">
+                                        <span class="text-xs text-gray-400">No tags</span>
+                                    </template>
+                                    <template x-for="tag in viewContactDetails.tags">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800" x-text="tag"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div x-show="showDelete" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+                <div x-show="showDelete" x-transition.opacity class="fixed inset-0 transition-opacity" aria-hidden="true">
+                    <div class="absolute inset-0 bg-gray-900 opacity-50"></div>
+                </div>
+
+                <div x-show="showDelete" x-transition.scale.origin.bottom class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full">
+                    <div class="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4 text-center">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-5">
+                            <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        </div>
+                        <h3 class="text-xl leading-6 font-bold text-gray-900 mb-2">Delete Contact</h3>
+                        <p class="text-sm text-gray-500 mb-6">
+                            Are you sure you want to delete <strong class="text-gray-900" x-text="deleteContactName"></strong>? This action cannot be undone and will remove all associated data.
+                        </p>
+                        
+                        <form :action="deleteUrl" method="POST" class="flex justify-center gap-3 w-full">
+                            @csrf
+                            @method('DELETE')
+                            <button type="button" @click="showDelete = false" class="w-1/2 px-4 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-all">
+                                Cancel
+                            </button>
+                            <button type="submit" class="w-1/2 px-4 py-3 border border-transparent rounded-xl font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none transition-all shadow-sm">
+                                Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </x-app-layout>

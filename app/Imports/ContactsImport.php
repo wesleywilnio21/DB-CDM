@@ -15,56 +15,65 @@ class ContactsImport
      */
     public function upload($filePath)
     {
-        $spreadsheet = IOFactory::load($filePath);
-        $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray();
-
-        $header = array_shift($rows); // Remove header
+        $file = fopen($filePath, 'r');
+        $header = fgetcsv($file); // Remove header
+        
+        // name, phone, birthday, address, organization, emails, note
+        
         $count = 0;
 
-        foreach ($rows as $row) {
-            if (empty($row[0]) || empty($row[1])) continue; // Skip if Name or Phone is empty
+        while (($row = fgetcsv($file)) !== false) {
+            if (empty($row[0])) continue; // Skip if Name is empty
+            
+            $name = trim($row[0]);
+            $phones = array_filter(array_map('trim', explode(',', $row[1] ?? '')));
+            $birthday = !empty($row[2]) ? $row[2] : null;
+            $address = $row[3] ?? null;
+            $organization = $row[4] ?? null;
+            $email = $row[5] ?? null;
+            $notes = $row[6] ?? null;
 
-            $data = [
-                'name'         => $row[0],
-                'phone'        => (string)$row[1],
-                'email'        => $row[2],
-                'address'      => $row[3],
-                'organization' => $row[4],
-                'birthdate'    => $row[5],
-                'notes'        => $row[6],
-            ];
-
-            // Basic validation
-            $validator = Validator::make($data, [
-                'name'  => 'required|string',
-                'phone' => 'required',
-            ]);
-
-            if ($validator->fails()) continue;
-
-            // Upsert by phone
-            $contact = Contact::updateOrCreate(
-                ['phone' => $data['phone']],
-                [
-                    'name'         => $data['name'],
-                    'email'        => $data['email'],
-                    'address'      => $data['address'],
-                    'organization' => $data['organization'],
-                    'birthdate'    => $data['birthdate'],
-                    'notes'        => $data['notes'],
-                ]
-            );
-
-            if ($contact->wasRecentlyCreated) {
-                ActivityLogger::log('created', $contact, "Imported new contact: {$contact->name}");
-            } else {
+            // Find contact by name (deduplication based on name)
+            $contact = Contact::where('name', $name)->first();
+            
+            if ($contact) {
+                // Update existing
+                $contact->update([
+                    'email'        => $email,
+                    'address'      => $address,
+                    'organization' => $organization,
+                    'birthdate'    => $birthday,
+                    'notes'        => $notes,
+                ]);
+                
                 ActivityLogger::log('updated', $contact, "Updated contact via import: {$contact->name}");
+            } else {
+                // Create new
+                $contact = Contact::create([
+                    'name'         => $name,
+                    'email'        => $email,
+                    'address'      => $address,
+                    'organization' => $organization,
+                    'birthdate'    => $birthday,
+                    'notes'        => $notes,
+                ]);
+                
+                ActivityLogger::log('created', $contact, "Imported new contact: {$contact->name}");
+                $count++;
             }
 
-            $count++;
+            // Sync phones
+            foreach ($phones as $index => $phoneStr) {
+                if (!empty($phoneStr)) {
+                    $contact->phones()->firstOrCreate(
+                        ['phone' => $phoneStr],
+                        ['is_primary' => ($index === 0 && $contact->phones()->count() === 0)]
+                    );
+                }
+            }
         }
-
+        
+        fclose($file);
         return $count;
     }
 }

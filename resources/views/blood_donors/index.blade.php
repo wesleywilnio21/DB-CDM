@@ -9,6 +9,7 @@
         showCreate: {{ $errors->has('contact_id') || ($errors->any() && !old('_method') && request()->isMethod('post') && !request()->routeIs('blood-donors.donate') && !request()->routeIs('blood-donors.quick-donate')) ? 'true' : 'false' }}, 
         showEdit: {{ $errors->any() && old('_method') == 'PATCH' ? 'true' : 'false' }},
         showView: {{ $errors->any() && request()->routeIs('blood-donors.donate') ? 'true' : 'false' }},
+        showImport: false,
         tab: 'existing',
         editDonor: { id: '', blood_type: '', rhesus: '', last_donation_date: '' },
         viewDonor: { id: '', name: '', phone: '', type: '', rhesus: '', next: '', history: [] },
@@ -36,10 +37,20 @@
             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="p-6 md:p-8 border-b border-gray-100 flex justify-between items-center">
                     <h3 class="text-xl font-bold text-gray-900 tracking-tight">Manage Blood Donors</h3>
-                    <button @click="showCreate = true" class="inline-flex items-center justify-center px-5 py-2.5 bg-red-600 border border-transparent rounded-full font-medium text-sm text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 transition-all shadow-sm">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        Register Donor
-                    </button>
+                    <div class="flex gap-3">
+                        <button @click="showImport = true" class="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-200 rounded-full font-medium text-sm text-gray-700 hover:bg-gray-50 focus:outline-none transition-all shadow-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            Import
+                        </button>
+                        <a href="{{ route('blood-donors.export') }}" class="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-200 rounded-full font-medium text-sm text-gray-700 hover:bg-gray-50 focus:outline-none transition-all shadow-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Export
+                        </a>
+                        <button @click="showCreate = true" class="inline-flex items-center justify-center px-5 py-2 bg-red-600 border border-transparent rounded-full font-medium text-sm text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 transition-all shadow-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Register Donor
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Quick Donate Section -->
@@ -151,7 +162,7 @@
                                                             type: '{{ $donor->blood_type }}', 
                                                             rhesus: '{{ $donor->rhesus }}',
                                                             next: '{{ $donor->next_eligible_date ? ($donor->next_eligible_date->isPast() ? 'Eligible Now' : $donor->next_eligible_date->format('M d, Y')) : 'Eligible Now' }}',
-                                                            history: {{ json_encode($donor->donationHistories->map(function($h){ return ['id'=>$h->id, 'date'=>$h->donated_at->format('M d, Y'), 'loc'=>$h->location, 'notes'=>$h->notes]; })) }}
+                                                            history: {{ json_encode($donor->donationSessions->map(function($s){ return ['id'=>$s->pivot->id, 'date'=>\Carbon\Carbon::parse($s->pivot->donated_at)->format('M d, Y'), 'loc'=>$s->pivot->location, 'notes'=>$s->pivot->notes]; })) }}
                                                         };
                                                         showView = true;
                                                     " 
@@ -458,6 +469,52 @@
                             <div class="mt-8 flex justify-end gap-3">
                                 <button type="button" @click="showEdit = false" class="px-5 py-2.5 border border-gray-200 rounded-full font-medium text-sm text-gray-700 hover:bg-gray-50 focus:outline-none transition-all shadow-sm">Cancel</button>
                                 <button type="submit" class="px-5 py-2.5 bg-gray-900 border border-transparent rounded-full font-medium text-sm text-white hover:bg-gray-800 focus:outline-none transition-all shadow-sm">Update Info</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Modal -->
+        <div x-show="showImport" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+                <div x-show="showImport" x-transition.opacity class="fixed inset-0 transition-opacity" aria-hidden="true">
+                    <div class="absolute inset-0 bg-gray-900 opacity-50"></div>
+                </div>
+
+                <div x-show="showImport" x-transition.scale.origin.bottom class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+                    <div class="bg-white px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-bold text-gray-900 tracking-tight">Import Blood Donors</h3>
+                            <button @click="showImport = false" type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                                <span class="sr-only">Close</span>
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        <form action="{{ route('blood-donors.import') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select CSV File</label>
+                                <input type="file" name="file" accept=".csv" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 transition-colors" />
+                                <x-input-error :messages="$errors->get('file')" class="mt-2" />
+                            </div>
+                            <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
+                                <a href="{{ route('blood-donors.template') }}" class="text-sm text-red-600 hover:text-red-800 font-medium">Download CSV Template</a>
+                            </div>
+
+                            <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 mb-6 mt-4">
+                                <h4 class="text-sm font-bold text-blue-900 mb-1">Instructions:</h4>
+                                <ul class="text-xs text-blue-800 space-y-1 list-disc list-inside">
+                                    <li>If the contact name does not exist in the database, a minimal contact will be created automatically.</li>
+                                    <li>Existing blood donor records for a given contact name will be updated.</li>
+                                    <li>Required columns: <strong>Contact Name</strong>, <strong>Blood Type</strong>, <strong>Rhesus</strong>.</li>
+                                </ul>
+                            </div>
+                            <div class="mt-8 flex justify-end gap-3">
+                                <button type="button" @click="showImport = false" class="px-5 py-2.5 border border-gray-200 rounded-full font-medium text-sm text-gray-700 hover:bg-gray-50 focus:outline-none transition-all shadow-sm">Cancel</button>
+                                <button type="submit" class="px-5 py-2.5 bg-gray-900 border border-transparent rounded-full font-medium text-sm text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all shadow-sm">Upload & Import</button>
                             </div>
                         </form>
                     </div>

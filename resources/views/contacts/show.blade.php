@@ -17,7 +17,10 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6 text-gray-900 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div><strong>Name:</strong> {{ $contact->name }}</div>
-                    <div><strong>Phone:</strong> {{ $contact->phone }}</div>
+                    <div>
+                        <strong>Phone(s):</strong> 
+                        {{ $contact->phones->pluck('phone')->join(', ') ?: '-' }}
+                    </div>
                     <div><strong>Email:</strong> {{ $contact->email ?: '-' }}</div>
                     <div><strong>Organization:</strong> {{ $contact->organization ?: '-' }}</div>
                     <div class="md:col-span-2"><strong>Address:</strong> {{ $contact->address ?: '-' }}</div>

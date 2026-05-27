@@ -13,29 +13,26 @@ class UserController extends Controller
 {
     public function index()
     {
-        $this->authorizeAdmin();
+        $this->authorizeSuperAdmin();
         $users = User::latest()->paginate(10);
         return view('users.index', compact('users'));
     }
 
     public function store(Request $request)
     {
-        $this->authorizeAdmin();
+        $this->authorizeSuperAdmin();
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'username' => ['required', 'string', 'max:255', 'unique:'.User::class],
+            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'string', 'in:super_admin,admin,staff'],
+            'role' => ['required', 'string', 'in:super_admin,admin'],
         ]);
-
-        // Only super_admin can create another super_admin or admin
-        if ($request->role !== 'staff' && !auth()->user()->isSuperAdmin()) {
-            return back()->withErrors(['role' => 'Only Super Admins can assign administrative roles.']);
-        }
 
         $user = User::create([
             'name' => $request->name,
+            'username' => $request->username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
@@ -48,25 +45,22 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        $this->authorizeAdmin();
+        $this->authorizeSuperAdmin();
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'role' => ['required', 'string', 'in:super_admin,admin,staff'],
+            'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id],
+            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'role' => ['required', 'string', 'in:super_admin,admin'],
         ]);
 
-        // Permission check
-        if ($user->isSuperAdmin() && !auth()->user()->isSuperAdmin()) {
-             abort(403, 'You cannot edit a Super Admin.');
-        }
-
-        if ($request->role !== $user->role && !auth()->user()->isSuperAdmin()) {
-            return back()->withErrors(['role' => 'Only Super Admins can change user roles.']);
+        // Permission check (only Super Admin can access this method now, but prevent editing other Super Admins if needed)
+        if ($user->isSuperAdmin() && $user->id !== auth()->id()) {
+             abort(403, 'You cannot edit another Super Admin.');
         }
 
         $oldRole = $user->role;
-        $user->update($request->only(['name', 'email', 'role']));
+        $user->update($request->only(['name', 'username', 'email', 'role']));
 
         if ($request->filled('password')) {
             $request->validate(['password' => ['confirmed', Rules\Password::defaults()]]);
@@ -99,9 +93,9 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }
 
-    protected function authorizeAdmin()
+    protected function authorizeSuperAdmin()
     {
-        if (!auth()->user()->isAdmin()) {
+        if (!auth()->user()->isSuperAdmin()) {
             abort(403, 'Unauthorized access.');
         }
     }

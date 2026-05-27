@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\BloodDonor;
 use App\Models\Contact;
+use App\Models\DonationSession;
 use Illuminate\Http\Request;
 
 class BloodDonorController extends Controller
 {
     public function index()
     {
-        $donors = BloodDonor::with(['contact', 'donationHistories'])->paginate(15);
+        $donors = BloodDonor::with(['contact', 'donationSessions'])->paginate(15);
         $allDonors = BloodDonor::with('contact')->get()->map(function($donor) {
             return [
                 'id' => $donor->id,
@@ -91,10 +92,20 @@ class BloodDonorController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $bloodDonor->donationHistories()->create($validated);
+        $session = DonationSession::firstOrCreate(
+            ['session_date' => $validated['donated_at'], 'location' => $validated['location']],
+        );
+
+        $session->donors()->syncWithoutDetaching([
+            $bloodDonor->id => [
+                'donated_at' => $validated['donated_at'],
+                'location' => $validated['location'],
+                'notes' => $validated['notes']
+            ]
+        ]);
         
         // Update the last_donation_date to be the most recent
-        $latestDonationDate = $bloodDonor->donationHistories()->max('donated_at');
+        $latestDonationDate = $bloodDonor->donationSessions()->max('donated_at');
         $bloodDonor->update(['last_donation_date' => $latestDonationDate]);
 
         return redirect()->route('blood-donors.index')->with('success', 'Donation logged successfully.');
@@ -104,5 +115,24 @@ class BloodDonorController extends Controller
     {
         $bloodDonor->delete();
         return redirect()->route('blood-donors.index')->with('success', 'Blood donor record deleted.');
+    }
+
+    public function export()
+    {
+        return (new \App\Exports\BloodDonorsExport())->download();
+    }
+
+    public function template()
+    {
+        return (new \App\Exports\BloodDonorsExport())->template();
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate(['file' => 'required|file|mimes:csv,txt|max:5000']);
+        
+        $count = (new \App\Imports\BloodDonorsImport())->upload($request->file('file')->getRealPath());
+        
+        return redirect()->route('blood-donors.index')->with('success', "{$count} blood donors imported successfully.");
     }
 }

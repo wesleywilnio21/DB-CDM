@@ -15,81 +15,44 @@ class ContactsExport
      */
     public function download()
     {
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Contacts');
-
-        // Headers
-        $headers = ['Name', 'Phone', 'Email', 'Address', 'Organization', 'Birthdate', 'Notes'];
-        foreach ($headers as $index => $header) {
-            $col = chr(65 + $index);
-            $sheet->setCellValue("{$col}1", $header);
-            $sheet->getStyle("{$col}1")->getFont()->setBold(true);
-            $sheet->getStyle("{$col}1")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFE0E0E0');
-        }
-
-        // Data
-        $contacts = Contact::all();
-        $row = 2;
-        foreach ($contacts as $contact) {
-            $sheet->setCellValue("A{$row}", $contact->name);
-            $sheet->setCellValue("B{$row}", $contact->phone);
-            $sheet->setCellValue("C{$row}", $contact->email);
-            $sheet->setCellValue("D{$row}", $contact->address);
-            $sheet->setCellValue("E{$row}", $contact->organization);
-            $sheet->setCellValue("F{$row}", $contact->birthdate ? $contact->birthdate->format('Y-m-d') : '');
-            $sheet->setCellValue("G{$row}", $contact->notes);
-            $row++;
-        }
-
-        // Auto-size columns
-        foreach (range('A', 'G') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
-
-        $writer = new Xlsx($spreadsheet);
-        
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="contacts_export_' . date('Y-m-d') . '.xlsx"');
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="contacts_export_' . date('Y-m-d') . '.csv"');
         header('Cache-Control: max-age=0');
+
+        $out = fopen('php://output', 'w');
         
-        $writer->save('php://output');
+        // Headers: name, phone, birthday, address, organization, emails, note
+        fputcsv($out, ['name', 'phone', 'birthday', 'address', 'organization', 'emails', 'note']);
+
+        $contacts = Contact::with('phones')->get();
+        foreach ($contacts as $contact) {
+            $phones = $contact->phones->pluck('phone')->join(', ');
+            fputcsv($out, [
+                $contact->name,
+                $phones,
+                $contact->birthdate ? $contact->birthdate->format('Y-m-d') : '',
+                $contact->address,
+                $contact->organization,
+                $contact->email,
+                $contact->notes
+            ]);
+        }
+
+        fclose($out);
         exit;
     }
 
-    /**
-     * Generate a blank template for import.
-     */
     public function template()
     {
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Import Template');
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="contacts_import_template.csv"');
+        header('Cache-Control: max-age=0');
 
-        $headers = ['Name', 'Phone', 'Email', 'Address', 'Organization', 'Birthdate', 'Notes'];
-        foreach ($headers as $index => $header) {
-            $col = chr(65 + $index);
-            $sheet->setCellValue("{$col}1", $header);
-            $sheet->getStyle("{$col}1")->getFont()->setBold(true);
-            $sheet->getStyle("{$col}1")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFD1E9F6');
-        }
-
-        // Example row
-        $sheet->setCellValue('A2', 'John Doe');
-        $sheet->setCellValue('B2', '08123456789');
-        $sheet->setCellValue('C2', 'john@example.com');
-        $sheet->getStyle('A2:G2')->getFont()->setItalic(true);
-
-        foreach (range('A', 'G') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
-
-        $writer = new Xlsx($spreadsheet);
+        $out = fopen('php://output', 'w');
+        fputcsv($out, ['name', 'phone', 'birthday', 'address', 'organization', 'emails', 'note']);
+        fputcsv($out, ['John Doe', '08123456789, 08987654321', '1990-01-01', 'Jl. Sudirman No 1', 'PT ABC', 'john@example.com', 'VIP Customer']);
         
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="contacts_import_template.xlsx"');
-        
-        $writer->save('php://output');
+        fclose($out);
         exit;
     }
 }

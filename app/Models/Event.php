@@ -19,6 +19,11 @@ class Event extends Model
 
     public function contacts()
     {
-        return $this->belongsToMany(Contact::class);
+        return $this->belongsToMany(Contact::class)->withPivot('guest_count');
+    }
+
+    public function letters()
+    {
+        return $this->hasMany(EventLetter::class);
     }
 }

@@ -16,11 +16,16 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         User::firstOrCreate(
-            ['email' => 'admin@gmail.com'],
+            ['username' => 'superadmin'],
             [
-                'name' => 'Admin User',
+                'name' => 'Super Admin User',
+                'email' => 'admin@gmail.com',
                 'password' => bcrypt('password'),
+                'role' => 'super_admin'
             ]
         );
+
+        // Seed development/dummy data
+        $this->call(DummyDataSeeder::class);
     }
 }
