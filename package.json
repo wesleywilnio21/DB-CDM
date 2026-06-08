@@ -3,10 +3,9 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "postbuild": "cp -R public/build/* public/",
-        "dev": "vite"
-    },
+    "build": "vite build",
+    "dev": "vite"
+  },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.2",
         "@tailwindcss/vite": "^4.0.0",
