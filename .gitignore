@@ -14,7 +14,7 @@
 /.zed
 /auth.json
 /node_modules
-# public/build (required for Vercel static output)
+# /public/build (required for Vercel static output)
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
