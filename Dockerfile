@@ -31,6 +31,6 @@ COPY ./docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-EXPOSE 7860
+EXPOSE 80
 
-CMD ["sh", "-c", "touch database/database.sqlite && chown -R www-data:www-data database/database.sqlite database && php artisan migrate:fresh --seed --force && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
