@@ -4,6 +4,7 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
+        "postbuild": "cp -R public/build/* public/",
         "dev": "vite"
     },
     "devDependencies": {
