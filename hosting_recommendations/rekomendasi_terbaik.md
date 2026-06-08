@@ -22,24 +22,35 @@ Render mirip dengan Heroku lama dan memiliki opsi gratis yang sangat ramah pemul
   - Memerlukan registrasi kartu kredit/debit untuk verifikasi saat ingin membuat database PostgreSQL gratis.
   - Pada opsi gratis, aplikasi akan masuk ke mode "tidur" jika tidak ada aktivitas selama 15 menit. Saat pertama kali diakses kembali, butuh waktu sekitar 30 detik untuk *spin up* (bangun).
 
-## 3. Hostinger / Niagahoster VPS / DomaiNesia (VPS Murah ⭐⭐⭐⭐)
+## 3. AWS EC2 - Amazon Web Services (Free Tier 12 Bulan ⭐⭐⭐⭐⭐)
+Layanan cloud provider terkemuka di dunia. Menyediakan VPS (Virtual Private Server) gratis selama 12 bulan untuk pengguna baru.
+- **Kelebihan:**
+  - **Gratis selama 12 bulan pertama** untuk jenis server mikro (`t2.micro` / `t3.micro`).
+  - Kontrol penuh atas server (bisa menggunakan Docker yang sudah kita siapkan).
+  - Sangat stabil, handal, dan standar industri profesional.
+- **Kekurangan:**
+  - Memerlukan verifikasi kartu kredit/debit saat mendaftar.
+  - Setelah 12 bulan berakhir, akan dikenakan biaya sesuai tarif penggunaan normal jika tidak dimatikan.
+  - Setup server bersifat manual melalui SSH terminal (namun sudah kami buatkan panduan praktis menggunakan Docker).
+
+## 4. Hostinger / Niagahoster VPS / DomaiNesia (VPS Lokal Murah ⭐⭐⭐⭐)
 Jika ingin menggunakan hosting lokal Indonesia agar pembayaran lebih mudah (pake QRIS/E-Wallet/Transfer Bank lokal).
 - **Kelebihan:**
   - Lokasi server bisa di Jakarta (akses lebih cepat dari Indonesia).
   - Pembayaran mudah menggunakan Rupiah dan metode pembayaran lokal.
-  - Kontrol penuh atas server (menggunakan VPS murah atau Cloud Hosting khusus Laravel).
+  - Kontrol penuh atas server.
 - **Kekurangan:**
-  - Setup bersifat manual (harus install PHP, Nginx, MySQL di VPS sendiri, atau menggunakan panel seperti CyberPanel/aaPanel). Lebih rumit untuk pemula dibanding Cloud PaaS seperti Railway/Render.
+  - Setup bersifat manual. Lebih rumit untuk pemula dibanding Cloud PaaS seperti Railway/Render.
 
-## 4. Fly.io (Handal untuk Skala Menengah ⭐⭐⭐⭐)
-Platform modern yang menjalankan aplikasi Anda menggunakan micro-VMs.
+## 5. Zeabur (Sangat Direkomendasikan Tanpa Kartu Kredit ⭐⭐⭐⭐⭐)
+Platform PaaS modern seperti Railway yang mendukung deployment otomatis dari GitHub tanpa perlu kartu kredit.
 - **Kelebihan:**
-  - Command Line Interface (CLI) yang sangat powerful (`flyctl`).
-  - Menyediakan free tier yang cukup murah hati untuk aplikasi kecil.
+  - **Sama sekali tidak memerlukan kartu kredit** untuk menggunakan paket gratisnya.
+  - Sangat mudah digunakan, mendukung deployment otomatis dari GitHub.
 - **Kekurangan:**
-  - Setup awal bisa terasa sedikit lebih teknis dibanding Railway yang serba klik di dashboard.
+  - Paket gratis memiliki batas resource (credits) bulanan.
 
 ---
 
 > [!TIP]
-> **Pilihan Terbaik untuk Showcase Cepat:** Gunakan **Railway**. Proses setup-nya sangat singkat (kurang dari 10 menit jika kode Anda sudah di GitHub) dan sangat stabil untuk demo/showcase.
+> **Pilihan Terbaik untuk Belajar Cloud Profesional:** Gunakan **AWS EC2 (Free Tier)**. Dengan menggunakan AWS, Anda belajar mengelola VPS sendiri secara nyata (standar industri) secara gratis selama setahun penuh.
