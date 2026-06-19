@@ -36,7 +36,7 @@ return new class extends Migration
                 'ttd_asset_id',
                 'sig_text_above',
                 'sig_name',
-                'sig_position'
+                'sig_position',
             ]);
         });
     }

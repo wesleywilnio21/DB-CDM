@@ -2,14 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Models\BloodDonor;
 use App\Models\Contact;
 use App\Models\ContactPhone;
 use App\Models\Event;
 use App\Models\EventLetter;
+use App\Models\LetterTemplate;
 use App\Models\Tag;
-use App\Models\BloodDonor;
-use Illuminate\Database\Seeder;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class DummyDataSeeder extends Seeder
 {
@@ -29,20 +30,20 @@ class DummyDataSeeder extends Seeder
                 'name' => 'Donor Darah Masal Ramadhan',
                 'date' => Carbon::now()->addDays(5),
                 'location' => 'Aula Masjid Agung, Jakarta',
-                'description' => 'Kegiatan donor darah tahunan di bulan Ramadhan untuk membantu ketersediaan stok darah PMI.'
+                'description' => 'Kegiatan donor darah tahunan di bulan Ramadhan untuk membantu ketersediaan stok darah PMI.',
             ],
             [
                 'name' => 'Seminar Kesehatan Donor Darah',
                 'date' => Carbon::now()->addDays(12),
                 'location' => 'Gedung Serbaguna Sehat Jaya, Jakarta',
-                'description' => 'Seminar pentingnya donor darah secara rutin bagi kesehatan tubuh.'
+                'description' => 'Seminar pentingnya donor darah secara rutin bagi kesehatan tubuh.',
             ],
             [
                 'name' => 'Donor Darah Rutin Triwulan',
                 'date' => Carbon::now()->subDays(20),
                 'location' => 'Kantor Pusat DB-CDM, Bandung',
-                'description' => 'Kegiatan donor rutin setiap 3 bulan untuk karyawan dan umum.'
-            ]
+                'description' => 'Kegiatan donor rutin setiap 3 bulan untuk karyawan dan umum.',
+            ],
         ];
 
         $createdEvents = collect($events)->map(function ($eventData) {
@@ -71,7 +72,7 @@ class DummyDataSeeder extends Seeder
                 'histories' => [
                     ['donated_at' => Carbon::now()->subDays(105), 'location' => 'PMI Jakarta Pusat', 'notes' => 'Lancar'],
                     ['donated_at' => Carbon::now()->subDays(45), 'location' => 'Aula Masjid Agung', 'notes' => 'Lancar'],
-                ]
+                ],
             ],
             [
                 'name' => 'Siti Aminah',
@@ -88,7 +89,7 @@ class DummyDataSeeder extends Seeder
                 'last_donation_date' => Carbon::now()->subDays(15),
                 'histories' => [
                     ['donated_at' => Carbon::now()->subDays(15), 'location' => 'Kantor Pusat DB-CDM', 'notes' => 'Lancar'],
-                ]
+                ],
             ],
             [
                 'name' => 'Ahmad Hidayat',
@@ -103,8 +104,8 @@ class DummyDataSeeder extends Seeder
                 'blood_type' => 'B',
                 'rhesus' => '-',
                 'last_donation_date' => null,
-                'histories' => []
-            ]
+                'histories' => [],
+            ],
         ];
 
         foreach ($contactsData as $data) {
@@ -146,14 +147,14 @@ class DummyDataSeeder extends Seeder
                     [
                         'blood_type' => $data['blood_type'],
                         'rhesus' => $data['rhesus'],
-                        'last_donation_date' => $data['last_donation_date']
+                        'last_donation_date' => $data['last_donation_date'],
                     ]
                 );
             }
         }
 
         // 4. Create Letter Templates and Event Letters
-        $template1 = \App\Models\LetterTemplate::firstOrCreate(
+        $template1 = LetterTemplate::firstOrCreate(
             ['title' => 'Template Undangan Donor Darah'],
             [
                 'body' => '<p>Halo {nama},</p><p>Kami mengundang Anda untuk berpartisipasi dalam acara <strong>Donor Darah Masal Ramadhan</strong> yang akan diadakan di Aula Masjid Agung.</p><p>Kehadiran Anda sangat berarti bagi mereka yang membutuhkan.</p><p>Salam hangat,<br>DB-CDM Team</p>',
@@ -162,7 +163,7 @@ class DummyDataSeeder extends Seeder
             ]
         );
 
-        $template2 = \App\Models\LetterTemplate::firstOrCreate(
+        $template2 = LetterTemplate::firstOrCreate(
             ['title' => 'Template Sponsorship'],
             [
                 'body' => '<p>Kepada Yth. Bapak/Ibu {nama},</p><p>Sehubungan dengan pelaksanaan acara <strong>Seminar Kesehatan Donor Darah</strong>, kami bermaksud mengajukan permohonan kerjasama sponsorship.</p><p>Terlampir proposal detail penawaran kerjasama ini.</p><p>Hormat kami,<br>DB-CDM Team</p>',
@@ -183,18 +184,18 @@ class DummyDataSeeder extends Seeder
                 'template_id' => $template2->id,
                 'recipient_name' => 'Ahmad Hidayat',
                 'recipient_phone' => '085211223344',
-            ]
+            ],
         ];
 
         foreach ($lettersData as $letterData) {
-            $template = \App\Models\LetterTemplate::find($letterData['template_id']);
+            $template = LetterTemplate::find($letterData['template_id']);
             $existing = EventLetter::where('event_id', $letterData['event_id'])
-                                   ->where('recipient_name', $letterData['recipient_name'])
-                                   ->first();
-            if (!$existing) {
+                ->where('recipient_name', $letterData['recipient_name'])
+                ->first();
+            if (! $existing) {
                 $event = Event::find($letterData['event_id']);
                 $generated = EventLetter::generateForEvent($event);
-                
+
                 EventLetter::create([
                     'event_id' => $event->id,
                     'title' => $template->title,

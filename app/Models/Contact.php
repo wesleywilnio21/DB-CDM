@@ -10,7 +10,7 @@ class Contact extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'email', 'address', 'organization', 'notes', 'birthdate'
+        'name', 'email', 'address', 'organization', 'notes', 'birthdate',
     ];
 
     protected $casts = [
@@ -25,6 +25,7 @@ class Contact extends Model
     public function getPrimaryPhoneAttribute()
     {
         $primary = $this->phones->where('is_primary', true)->first();
+
         return $primary ? $primary->phone : ($this->phones->first()->phone ?? null);
     }
 

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\ActivityLog;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,6 +14,7 @@ class UserController extends Controller
     {
         $this->authorizeSuperAdmin();
         $users = User::latest()->paginate(10);
+
         return view('users.index', compact('users'));
     }
 
@@ -56,7 +56,7 @@ class UserController extends Controller
 
         // Permission check (only Super Admin can access this method now, but prevent editing other Super Admins if needed)
         if ($user->isSuperAdmin() && $user->id !== auth()->id()) {
-             abort(403, 'You cannot edit another Super Admin.');
+            abort(403, 'You cannot edit another Super Admin.');
         }
 
         $oldRole = $user->role;
@@ -69,7 +69,7 @@ class UserController extends Controller
 
         ActivityLogger::log('updated', $user, "Updated user account: {$user->name}", [
             'old_role' => $oldRole,
-            'new_role' => $user->role
+            'new_role' => $user->role,
         ]);
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
@@ -77,7 +77,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             abort(403, 'Only Super Admins can delete users.');
         }
 
@@ -95,7 +95,7 @@ class UserController extends Controller
 
     protected function authorizeSuperAdmin()
     {
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             abort(403, 'Unauthorized access.');
         }
     }

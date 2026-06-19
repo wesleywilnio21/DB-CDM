@@ -10,7 +10,7 @@ class TagController extends Controller
     public function store(Request $request)
     {
         $this->authorizeSuperAdmin();
-        
+
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:tags,name',
         ]);
@@ -24,12 +24,13 @@ class TagController extends Controller
     {
         $this->authorizeSuperAdmin();
         $tag->delete();
+
         return back()->with('success', 'Tag deleted successfully.');
     }
 
     protected function authorizeSuperAdmin()
     {
-        if (!auth()->user()->isSuperAdmin()) {
+        if (! auth()->user()->isSuperAdmin()) {
             abort(403, 'Unauthorized access.');
         }
     }

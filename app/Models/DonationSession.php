@@ -10,7 +10,7 @@ class DonationSession extends Model
     use HasFactory;
 
     protected $fillable = [
-        'session_date', 'location', 'notes'
+        'session_date', 'location', 'notes',
     ];
 
     protected $casts = [
@@ -21,8 +21,9 @@ class DonationSession extends Model
     {
         $dateStr = $this->session_date ? $this->session_date->format('M d, Y') : '';
         if ($this->location) {
-            return $dateStr . ' · ' . $this->location;
+            return $dateStr.' · '.$this->location;
         }
+
         return $dateStr;
     }
 

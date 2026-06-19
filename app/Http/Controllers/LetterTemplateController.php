@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
-use App\Models\LetterTemplate;
 use App\Models\LetterAsset;
+use App\Models\LetterTemplate;
+use Illuminate\Http\Request;
 
 class LetterTemplateController extends Controller
 {
     public function index()
     {
         $templates = LetterTemplate::latest()->paginate(15);
+
         return view('letter_templates.index', compact('templates'));
     }
 
@@ -20,6 +20,7 @@ class LetterTemplateController extends Controller
         $logos = LetterAsset::logos()->latest()->get();
         $kops = LetterAsset::kops()->latest()->get();
         $ttds = LetterAsset::ttds()->latest()->get();
+
         return view('letter_templates.create', compact('logos', 'kops', 'ttds'));
     }
 
@@ -46,6 +47,7 @@ class LetterTemplateController extends Controller
         $logos = LetterAsset::logos()->latest()->get();
         $kops = LetterAsset::kops()->latest()->get();
         $ttds = LetterAsset::ttds()->latest()->get();
+
         return view('letter_templates.edit', compact('letterTemplate', 'logos', 'kops', 'ttds'));
     }
 
@@ -70,6 +72,7 @@ class LetterTemplateController extends Controller
     public function destroy(LetterTemplate $letterTemplate)
     {
         $letterTemplate->delete();
+
         return redirect()->route('letter-templates.index')->with('success', 'Letter template deleted successfully.');
     }
 }

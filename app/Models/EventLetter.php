@@ -63,12 +63,12 @@ class EventLetter extends Model
         $nextSequence = $maxSequence + 1;
 
         // Generate Roman numeral for month
-        $romans = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+        $romans = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
         $monthRoman = $romans[date('n') - 1];
-        
+
         $year = date('Y');
-        
-        if (!$customCode) {
+
+        if (! $customCode) {
             // Generate initials from event name (e.g., "Donor Darah Masal" -> DDM)
             $words = explode(' ', $event->name);
             $initials = '';
@@ -86,7 +86,7 @@ class EventLetter extends Model
 
         return [
             'sequence' => $nextSequence,
-            'letter_number' => $letterNumber
+            'letter_number' => $letterNumber,
         ];
     }
 
@@ -94,26 +94,31 @@ class EventLetter extends Model
     {
         $map = [
             1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V', 6 => 'VI',
-            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII'
+            7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X', 11 => 'XI', 12 => 'XII',
         ];
+
         return $map[$month] ?? 'I';
     }
 
     public function getFormattedIssuedAtIdAttribute()
     {
-        if (!$this->issued_at) return null;
+        if (! $this->issued_at) {
+            return null;
+        }
         $months = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
             5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
-        return $this->issued_at->format('d') . ' ' . $months[(int)$this->issued_at->format('m')] . ' ' . $this->issued_at->format('Y');
+
+        return $this->issued_at->format('d').' '.$months[(int) $this->issued_at->format('m')].' '.$this->issued_at->format('Y');
     }
 
     public function getDisplayCityDateAttribute()
     {
         $city = $this->city ?: AppSetting::get('org_city_default', config('organization.city', 'Jakarta'));
         $date = $this->formatted_issued_at_id ?: now()->format('d M Y');
+
         return "{$city}, {$date}";
     }
 }

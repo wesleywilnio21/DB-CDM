@@ -3,10 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Contact;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class ContactsExport
 {
@@ -16,11 +13,11 @@ class ContactsExport
     public function download()
     {
         header('Content-Type: text/csv');
-        header('Content-Disposition: attachment; filename="contacts_export_' . date('Y-m-d') . '.csv"');
+        header('Content-Disposition: attachment; filename="contacts_export_'.date('Y-m-d').'.csv"');
         header('Cache-Control: max-age=0');
 
         $out = fopen('php://output', 'w');
-        
+
         // Headers: name, phone, birthday, address, organization, emails, note
         fputcsv($out, ['name', 'phone', 'birthday', 'address', 'organization', 'emails', 'note']);
 
@@ -34,7 +31,7 @@ class ContactsExport
                 $contact->address,
                 $contact->organization,
                 $contact->email,
-                $contact->notes
+                $contact->notes,
             ]);
         }
 
@@ -51,7 +48,7 @@ class ContactsExport
         $out = fopen('php://output', 'w');
         fputcsv($out, ['name', 'phone', 'birthday', 'address', 'organization', 'emails', 'note']);
         fputcsv($out, ['John Doe', '08123456789, 08987654321', '1990-01-01', 'Jl. Sudirman No 1', 'PT ABC', 'john@example.com', 'VIP Customer']);
-        
+
         fclose($out);
         exit;
     }

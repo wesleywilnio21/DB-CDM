@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BloodDonor;
 use App\Models\Contact;
 use App\Models\Event;
-use App\Models\BloodDonor;
-use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
@@ -14,7 +13,7 @@ class DashboardController extends Controller
         $totalContacts = Contact::count();
         $totalEvents = Event::count();
         $totalDonors = BloodDonor::count();
-        
+
         $eligibleDonors = BloodDonor::get()->filter(function ($donor) {
             return $donor->next_eligible_date && $donor->next_eligible_date->isPast();
         })->count();

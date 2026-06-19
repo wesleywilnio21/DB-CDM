@@ -2,30 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\BloodDonorsExport;
+use App\Imports\BloodDonorsImport;
 use App\Models\BloodDonor;
 use App\Models\Contact;
 use App\Models\DonationSession;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BloodDonorController extends Controller
 {
     public function index()
     {
         $donors = BloodDonor::with(['contact', 'donationSessions'])->paginate(15);
-        $allDonors = BloodDonor::with('contact')->get()->map(function($donor) {
+        $allDonors = BloodDonor::with('contact')->get()->map(function ($donor) {
             return [
                 'id' => $donor->id,
                 'name' => $donor->contact->name,
                 'phone' => $donor->contact->phone,
-                'type' => $donor->blood_type . $donor->rhesus,
+                'type' => $donor->blood_type.$donor->rhesus,
             ];
         });
+
         return view('blood_donors.index', compact('donors', 'allDonors'));
     }
 
     public function create()
     {
         $contacts = Contact::doesntHave('bloodDonor')->get();
+
         return view('blood_donors.create', compact('contacts'));
     }
 
@@ -39,6 +44,7 @@ class BloodDonorController extends Controller
         ]);
 
         BloodDonor::create($validated);
+
         return redirect()->route('blood-donors.index')->with('success', 'Blood donor record created.');
     }
 
@@ -56,6 +62,7 @@ class BloodDonorController extends Controller
         ]);
 
         $bloodDonor->update($validated);
+
         return redirect()->route('blood-donors.index')->with('success', 'Blood donor record updated.');
     }
 
@@ -74,9 +81,9 @@ class BloodDonorController extends Controller
             'last_donation_date' => 'nullable|date',
         ]);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($validatedContact, $validatedDonor) {
+        DB::transaction(function () use ($validatedContact, $validatedDonor) {
             $contact = Contact::create($validatedContact);
-            
+
             $validatedDonor['contact_id'] = $contact->id;
             BloodDonor::create($validatedDonor);
         });
@@ -100,10 +107,10 @@ class BloodDonorController extends Controller
             $bloodDonor->id => [
                 'donated_at' => $validated['donated_at'],
                 'location' => $validated['location'],
-                'notes' => $validated['notes']
-            ]
+                'notes' => $validated['notes'],
+            ],
         ]);
-        
+
         // Update the last_donation_date to be the most recent
         $latestDonationDate = $bloodDonor->donationSessions()->max('donated_at');
         $bloodDonor->update(['last_donation_date' => $latestDonationDate]);
@@ -114,25 +121,26 @@ class BloodDonorController extends Controller
     public function destroy(BloodDonor $bloodDonor)
     {
         $bloodDonor->delete();
+
         return redirect()->route('blood-donors.index')->with('success', 'Blood donor record deleted.');
     }
 
     public function export()
     {
-        return (new \App\Exports\BloodDonorsExport())->download();
+        return (new BloodDonorsExport)->download();
     }
 
     public function template()
     {
-        return (new \App\Exports\BloodDonorsExport())->template();
+        return (new BloodDonorsExport)->template();
     }
 
     public function import(Request $request)
     {
         $request->validate(['file' => 'required|file|mimes:csv,txt|max:5000']);
-        
-        $count = (new \App\Imports\BloodDonorsImport())->upload($request->file('file')->getRealPath());
-        
+
+        $count = (new BloodDonorsImport)->upload($request->file('file')->getRealPath());
+
         return redirect()->route('blood-donors.index')->with('success', "{$count} blood donors imported successfully.");
     }
 }

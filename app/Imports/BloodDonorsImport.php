@@ -2,8 +2,8 @@
 
 namespace App\Imports;
 
-use App\Models\Contact;
 use App\Models\BloodDonor;
+use App\Models\Contact;
 use App\Services\ActivityLogger;
 
 class BloodDonorsImport
@@ -12,27 +12,29 @@ class BloodDonorsImport
     {
         $file = fopen($filePath, 'r');
         $header = fgetcsv($file);
-        
+
         $count = 0;
 
         while (($row = fgetcsv($file)) !== false) {
-            if (empty($row[0])) continue; // Skip if Contact Name is empty
+            if (empty($row[0])) {
+                continue;
+            } // Skip if Contact Name is empty
 
             $contactName = trim($row[0]);
             $bloodType = trim($row[1] ?? '');
             $rhesus = trim($row[2] ?? '');
-            $lastDonationDate = !empty($row[3]) ? trim($row[3]) : null;
+            $lastDonationDate = ! empty($row[3]) ? trim($row[3]) : null;
 
             // Find contact by name
             $contact = Contact::where('name', $contactName)->first();
 
             // If contact doesn't exist, create it minimally
-            if (!$contact) {
+            if (! $contact) {
                 $contact = Contact::create(['name' => $contactName]);
                 ActivityLogger::log('created', $contact, "Created contact via Blood Donor import: {$contact->name}");
             }
 
-            if (!empty($bloodType)) {
+            if (! empty($bloodType)) {
                 $bloodDonor = BloodDonor::where('contact_id', $contact->id)->first();
                 if ($bloodDonor) {
                     $bloodDonor->update([
@@ -55,6 +57,7 @@ class BloodDonorsImport
         }
 
         fclose($file);
+
         return $count;
     }
 }

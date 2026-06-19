@@ -10,7 +10,7 @@ class DonationSessionDonor extends Model
     use HasFactory;
 
     protected $fillable = [
-        'donation_session_id', 'blood_donor_id', 'donated_at', 'location', 'notes'
+        'donation_session_id', 'blood_donor_id', 'donated_at', 'location', 'notes',
     ];
 
     protected $casts = [

@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class BloodDonor extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'contact_id', 'blood_type', 'rhesus', 'last_donation_date'
+        'contact_id', 'blood_type', 'rhesus', 'last_donation_date',
     ];
 
     protected $casts = [
@@ -25,11 +25,12 @@ class BloodDonor extends Model
 
     public function getNextEligibleDateAttribute()
     {
-        if (!$this->last_donation_date) return null;
+        if (! $this->last_donation_date) {
+            return null;
+        }
+
         return Carbon::parse($this->last_donation_date)->addDays(60);
     }
-
-
 
     public function donationSessions()
     {

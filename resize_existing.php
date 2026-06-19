@@ -1,14 +1,20 @@
 <?php
-require __DIR__ . '/vendor/autoload.php';
-$app = require_once __DIR__ . '/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+
+use App\Models\LetterAsset;
+use Illuminate\Contracts\Console\Kernel;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
+
+require __DIR__.'/vendor/autoload.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
+$kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
-$assets = \App\Models\LetterAsset::all();
-$manager = new \Intervention\Image\ImageManager(new \Intervention\Image\Drivers\Gd\Driver());
+$assets = LetterAsset::all();
+$manager = new ImageManager(new Driver);
 
-foreach($assets as $a) {
-    $path = storage_path('app/private/' . $a->file_path);
+foreach ($assets as $a) {
+    $path = storage_path('app/private/'.$a->file_path);
     if (file_exists($path)) {
         try {
             $image = $manager->decodePath($path);
@@ -17,8 +23,8 @@ foreach($assets as $a) {
                 $image->scale(width: 800);
                 $image->save($path);
             }
-        } catch (\Exception $e) {
-            echo "Error resizing {$a->id}: " . $e->getMessage() . "\n";
+        } catch (Exception $e) {
+            echo "Error resizing {$a->id}: ".$e->getMessage()."\n";
         }
     }
 }

@@ -2,21 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\Event;
 use App\Models\EventLetter;
 use App\Models\LetterAsset;
-use App\Models\AppSetting;
+use App\Models\LetterTemplate;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Barryvdh\DomPDF\Facade\Pdf;
-use ZipArchive;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use ZipArchive;
 
 class EventLetterController extends Controller
 {
     public function index(Event $event)
     {
         $letters = $event->letters()->latest()->paginate(10);
+
         return view('events.letters.index', compact('event', 'letters'));
     }
 
@@ -110,12 +112,14 @@ class EventLetterController extends Controller
         $event = $letter->event;
         $orgSettings = AppSetting::getOrg();
         $pdf = Pdf::loadView('events.letters.pdf', compact('event', 'letter', 'orgSettings'));
-        return $pdf->download('Surat_' . str_replace(' ', '_', $letter->recipient_name) . '.pdf');
+
+        return $pdf->download('Surat_'.str_replace(' ', '_', $letter->recipient_name).'.pdf');
     }
 
     public function bulkGenerate(Event $event)
     {
-        $templates = \App\Models\LetterTemplate::latest()->get();
+        $templates = LetterTemplate::latest()->get();
+
         return view('events.letters.bulk-generate', compact('event', 'templates'));
     }
 
@@ -127,15 +131,15 @@ class EventLetterController extends Controller
             'excel_file' => 'nullable|file|mimes:xlsx,xls,csv|max:5120',
         ]);
 
-        $template = \App\Models\LetterTemplate::findOrFail($request->template_id);
+        $template = LetterTemplate::findOrFail($request->template_id);
         $names = collect();
 
         // 1. Process manual names
         if ($request->filled('manual_names')) {
-            $manualNames = explode("\n", str_replace("\r", "", $request->manual_names));
+            $manualNames = explode("\n", str_replace("\r", '', $request->manual_names));
             foreach ($manualNames as $name) {
                 $cleanName = trim($name);
-                if (!empty($cleanName)) {
+                if (! empty($cleanName)) {
                     $names->push($cleanName);
                 }
             }
@@ -147,21 +151,21 @@ class EventLetterController extends Controller
                 $file = $request->file('excel_file');
                 $spreadsheet = IOFactory::load($file->getRealPath());
                 $sheet = $spreadsheet->getActiveSheet();
-                
+
                 foreach ($sheet->getRowIterator() as $row) {
                     $cellIterator = $row->getCellIterator();
-                    $cellIterator->setIterateOnlyExistingCells(false); 
-                    
+                    $cellIterator->setIterateOnlyExistingCells(false);
+
                     foreach ($cellIterator as $cell) {
                         $value = trim($cell->getValue() ?? '');
-                        if (!empty($value)) {
+                        if (! empty($value)) {
                             $names->push($value);
                         }
                         break; // Only read the first column (Column A)
                     }
                 }
             } catch (\Exception $e) {
-                return back()->withErrors(['excel_file' => 'Error reading file: ' . $e->getMessage()]);
+                return back()->withErrors(['excel_file' => 'Error reading file: '.$e->getMessage()]);
             }
         }
 
@@ -172,18 +176,18 @@ class EventLetterController extends Controller
         }
 
         $orgSettings = AppSetting::getOrg();
-        $zipPath = storage_path('app/private/Bulk_Letters_' . time() . '.zip');
+        $zipPath = storage_path('app/private/Bulk_Letters_'.time().'.zip');
         $zip = new ZipArchive;
-        
-        if ($zip->open($zipPath, ZipArchive::CREATE) === TRUE) {
-            
+
+        if ($zip->open($zipPath, ZipArchive::CREATE) === true) {
+
             foreach ($names as $name) {
                 // Generate next sequence for this event
                 $generated = EventLetter::generateForEvent($event, null);
-                
+
                 // Customize body with placeholder
                 $body = str_replace('{nama}', $name, $template->body);
-                
+
                 // Create new letter from template
                 $newLetter = new EventLetter([
                     'event_id' => $event->id,
@@ -203,18 +207,18 @@ class EventLetterController extends Controller
                     'letter_sequence' => $generated['sequence'],
                 ]);
                 $newLetter->save();
-                
+
                 // Generate PDF
                 $pdf = Pdf::loadView('events.letters.pdf', ['event' => $event, 'letter' => $newLetter, 'orgSettings' => $orgSettings]);
                 $pdfContent = $pdf->output();
-                
+
                 $safeName = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $name);
-                $filename = 'Surat_' . $safeName . '_' . $generated['sequence'] . '.pdf';
+                $filename = 'Surat_'.$safeName.'_'.$generated['sequence'].'.pdf';
                 $zip->addFromString($filename, $pdfContent);
             }
-            
+
             $zip->close();
-            
+
             return response()->download($zipPath)->deleteFileAfterSend(true);
         }
 

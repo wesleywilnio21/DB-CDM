@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -24,7 +24,7 @@ return new class extends Migration
         $contacts = DB::table('contacts')->whereNotNull('phone')->get();
         $phones = [];
         foreach ($contacts as $contact) {
-            if (!empty($contact->phone)) {
+            if (! empty($contact->phone)) {
                 $phones[] = [
                     'contact_id' => $contact->id,
                     'phone' => $contact->phone,
@@ -34,7 +34,7 @@ return new class extends Migration
                 ];
             }
         }
-        
+
         if (count($phones) > 0) {
             DB::table('contact_phones')->insert($phones);
         }

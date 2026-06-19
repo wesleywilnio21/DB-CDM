@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class AppSetting extends Model
 {
     public $incrementing = false;
+
     protected $primaryKey = 'key';
+
     protected $keyType = 'string';
 
     protected $fillable = ['key', 'value'];
@@ -18,6 +20,7 @@ class AppSetting extends Model
     public static function get(string $key, $default = null): ?string
     {
         $setting = self::find($key);
+
         return $setting ? $setting->value : $default;
     }
 
@@ -38,6 +41,7 @@ class AppSetting extends Model
     public static function getOrg(): array
     {
         $settings = self::where('key', 'like', 'org_%')->pluck('value', 'key')->toArray();
+
         return [
             'org_name' => $settings['org_name'] ?? config('organization.name'),
             'org_address' => $settings['org_address'] ?? config('organization.address'),

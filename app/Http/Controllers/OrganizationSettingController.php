@@ -10,6 +10,7 @@ class OrganizationSettingController extends Controller
     public function index()
     {
         $settings = AppSetting::getOrg();
+
         return view('settings.organization', compact('settings'));
     }
 

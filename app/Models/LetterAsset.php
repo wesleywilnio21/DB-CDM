@@ -42,7 +42,8 @@ class LetterAsset extends Model
      */
     public function absolutePath(): ?string
     {
-        $path = storage_path('app/private/' . $this->file_path);
+        $path = storage_path('app/private/'.$this->file_path);
+
         return file_exists($path) ? $path : null;
     }
 }

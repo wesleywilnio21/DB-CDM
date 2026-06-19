@@ -20,8 +20,8 @@ return new class extends Migration
                     ->where('session_date', $history->donated_at)
                     ->where('location', $history->location)
                     ->first();
-                
-                if (!$session) {
+
+                if (! $session) {
                     $sessionId = DB::table('donation_sessions')->insertGetId([
                         'name' => 'Legacy Migration', // temporary name
                         'session_date' => $history->donated_at,

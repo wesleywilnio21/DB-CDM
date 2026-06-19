@@ -10,7 +10,7 @@ class ContactPhone extends Model
     use HasFactory;
 
     protected $fillable = [
-        'contact_id', 'phone', 'is_primary'
+        'contact_id', 'phone', 'is_primary',
     ];
 
     public function contact()

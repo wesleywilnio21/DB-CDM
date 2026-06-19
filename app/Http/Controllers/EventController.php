@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Event;
 use App\Models\Contact;
+use App\Models\Event;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
@@ -14,6 +14,7 @@ class EventController extends Controller
             ->withSum('contacts as guests_count', 'contact_event.guest_count')
             ->orderBy('date', 'desc')
             ->paginate(15);
+
         return view('events.index', compact('events'));
     }
 
@@ -32,16 +33,17 @@ class EventController extends Controller
         ]);
 
         Event::create($validated);
+
         return redirect()->route('events.index')->with('success', 'Event created successfully.');
     }
 
     public function show(Event $event)
     {
-        $event->load(['contacts' => function($q) {
+        $event->load(['contacts' => function ($q) {
             $q->orderBy('name');
         }]);
         $allContacts = Contact::orderBy('name')->get();
-        
+
         $totalAttendees = $event->contacts->count() + $event->contacts->sum('pivot.guest_count');
 
         return view('events.show', compact('event', 'allContacts', 'totalAttendees'));
@@ -53,7 +55,7 @@ class EventController extends Controller
             'contact_ids' => 'required|array',
             'contact_ids.*' => 'exists:contacts,id',
             'guest_counts' => 'nullable|array',
-            'guest_counts.*' => 'integer|min:0'
+            'guest_counts.*' => 'integer|min:0',
         ]);
 
         $syncData = [];
@@ -63,23 +65,25 @@ class EventController extends Controller
         }
 
         $event->contacts()->syncWithoutDetaching($syncData);
-        return redirect()->route('events.show', $event)->with('success', count($request->contact_ids) . ' participants added successfully.');
+
+        return redirect()->route('events.show', $event)->with('success', count($request->contact_ids).' participants added successfully.');
     }
 
     public function updateGuestCount(Request $request, Event $event, Contact $contact)
     {
         $request->validate([
-            'guest_count' => 'required|integer|min:0'
+            'guest_count' => 'required|integer|min:0',
         ]);
 
         $event->contacts()->updateExistingPivot($contact->id, ['guest_count' => $request->guest_count]);
-        
+
         return back()->with('success', "Guest count updated for {$contact->name}.");
     }
 
     public function removeContact(Event $event, Contact $contact)
     {
         $event->contacts()->detach($contact->id);
+
         return back()->with('success', "{$contact->name} removed from event.");
     }
 
@@ -90,18 +94,18 @@ class EventController extends Controller
             'phone' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'organization' => 'nullable|string|max:255',
-            'guest_count' => 'nullable|integer|min:0'
+            'guest_count' => 'nullable|integer|min:0',
         ]);
 
         $contact = Contact::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'organization' => $validated['organization']
+            'organization' => $validated['organization'],
         ]);
 
         $contact->phones()->create([
             'phone' => $validated['phone'],
-            'is_primary' => true
+            'is_primary' => true,
         ]);
 
         $event->contacts()->attach($contact->id, ['guest_count' => $validated['guest_count'] ?? 0]);
@@ -112,6 +116,7 @@ class EventController extends Controller
     public function destroy(Event $event)
     {
         $event->delete();
+
         return redirect()->route('events.index')->with('success', 'Event deleted successfully.');
     }
 }

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('body');
-            
+
             // Assets (nullable)
             $table->foreignId('logo_asset_id')->nullable()->constrained('letter_assets')->nullOnDelete();
             $table->foreignId('kop_asset_id')->nullable()->constrained('letter_assets')->nullOnDelete();
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('sig_text_above')->nullable(); // e.g. "Hormat Kami,"
             $table->string('sig_name')->nullable();       // e.g. "John Doe"
             $table->string('sig_position')->nullable();   // e.g. "Ketua Panitia"
-            
+
             $table->timestamps();
         });
     }
