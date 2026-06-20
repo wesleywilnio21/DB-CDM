@@ -1,30 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateOrganizationSettingRequest;
 use App\Models\AppSetting;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class OrganizationSettingController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $settings = AppSetting::getOrg();
 
         return view('settings.organization', compact('settings'));
     }
 
-    public function update(Request $request)
+    public function update(UpdateOrganizationSettingRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'org_name' => 'required|string|max:255',
-            'org_address' => 'required|string|max:500',
-            'org_phone' => 'required|string|max:255',
-            'org_tagline' => 'nullable|string|max:255',
-            'org_city_default' => 'required|string|max:255',
-        ]);
-
-        foreach ($validated as $key => $value) {
+        foreach ($request->validated() as $key => $value) {
             AppSetting::set($key, $value);
         }
 

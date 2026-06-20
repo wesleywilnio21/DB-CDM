@@ -1,16 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Services\ActivityLogger;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
+use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $this->authorizeSuperAdmin();
         $users = User::latest()->paginate(10);
@@ -18,24 +22,17 @@ class UserController extends Controller
         return view('users.index', compact('users'));
     }
 
-    public function store(Request $request)
+    public function store(StoreUserRequest $request): RedirectResponse
     {
         $this->authorizeSuperAdmin();
 
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:'.User::class],
-            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'string', 'in:super_admin,admin'],
-        ]);
-
-        $user = User::create([
-            'name' => $request->name,
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
+        $data     = $request->validated();
+        $user     = User::create([
+            'name'     => $data['name'],
+            'username' => $data['username'],
+            'email'    => $data['email'],
+            'password' => Hash::make($data['password']),
+            'role'     => $data['role'],
         ]);
 
         ActivityLogger::log('created', $user, "Created user account: {$user->name} ({$user->role})");
@@ -43,28 +40,27 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
 
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $this->authorizeSuperAdmin();
 
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users,username,'.$user->id],
-            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'role' => ['required', 'string', 'in:super_admin,admin'],
-        ]);
-
-        // Permission check (only Super Admin can access this method now, but prevent editing other Super Admins if needed)
+        // Cegah edit Super Admin lain
         if ($user->isSuperAdmin() && $user->id !== auth()->id()) {
             abort(403, 'You cannot edit another Super Admin.');
         }
 
+        $data    = $request->validated();
         $oldRole = $user->role;
-        $user->update($request->only(['name', 'username', 'email', 'role']));
 
-        if ($request->filled('password')) {
-            $request->validate(['password' => ['confirmed', Rules\Password::defaults()]]);
-            $user->update(['password' => Hash::make($request->password)]);
+        $user->update(array_filter([
+            'name'     => $data['name'],
+            'username' => $data['username'],
+            'email'    => $data['email'],
+            'role'     => $data['role'],
+        ], fn ($v) => $v !== null));
+
+        if (filled($data['password'] ?? null)) {
+            $user->update(['password' => Hash::make($data['password'])]);
         }
 
         ActivityLogger::log('updated', $user, "Updated user account: {$user->name}", [
@@ -75,11 +71,9 @@ class UserController extends Controller
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }
 
-    public function destroy(User $user)
+    public function destroy(User $user): RedirectResponse
     {
-        if (! auth()->user()->isSuperAdmin()) {
-            abort(403, 'Only Super Admins can delete users.');
-        }
+        $this->authorizeSuperAdmin();
 
         if ($user->id === auth()->id()) {
             return back()->with('error', 'You cannot delete yourself.');
@@ -91,12 +85,5 @@ class UserController extends Controller
         ActivityLogger::log('deleted', $user, "Deleted user account: {$name}");
 
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
-    }
-
-    protected function authorizeSuperAdmin()
-    {
-        if (! auth()->user()->isSuperAdmin()) {
-            abort(403, 'Unauthorized access.');
-        }
     }
 }

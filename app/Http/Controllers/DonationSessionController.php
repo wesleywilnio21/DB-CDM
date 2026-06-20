@@ -1,74 +1,64 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AddDonorToSessionRequest;
+use App\Http\Requests\CreateAndAddDonorRequest;
+use App\Http\Requests\StoreDonationSessionRequest;
 use App\Models\BloodDonor;
-use App\Models\Contact;
 use App\Models\DonationSession;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Services\DonationSessionService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class DonationSessionController extends Controller
 {
-    public function index()
+    public function __construct(
+        private readonly DonationSessionService $donationSessionService
+    ) {}
+
+    public function index(): View
     {
         $sessions = DonationSession::withCount('donors')->orderBy('session_date', 'desc')->paginate(15);
 
         return view('donation_sessions.index', compact('sessions'));
     }
 
-    public function store(Request $request)
+    public function store(StoreDonationSessionRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'session_date' => 'required|date',
-            'location' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
-        ]);
-
-        DonationSession::create($validated);
+        DonationSession::create($request->validated());
 
         return redirect()->route('donation-sessions.index')->with('success', 'Donation session created.');
     }
 
-    public function show(DonationSession $donationSession)
+    public function show(DonationSession $donationSession): View
     {
-        $donationSession->load(['donors.contact' => function ($q) {
+        $donationSession->load(['donors.contact' => function ($q): void {
             $q->orderBy('name');
         }]);
 
-        $allDonors = BloodDonor::with('contact')->whereNotIn('id', $donationSession->donors->pluck('id'))->get()->sortBy('contact.name');
+        $allDonors = BloodDonor::with('contact')
+            ->whereNotIn('id', $donationSession->donors->pluck('id'))
+            ->get()
+            ->sortBy('contact.name');
 
         return view('donation_sessions.show', compact('donationSession', 'allDonors'));
     }
 
-    public function addDonor(Request $request, DonationSession $donationSession)
+    public function addDonor(AddDonorToSessionRequest $request, DonationSession $donationSession): RedirectResponse
     {
-        $request->validate([
-            'donor_ids' => 'required|array',
-            'donor_ids.*' => 'exists:blood_donors,id',
-        ]);
+        $donorIds = $request->validated()['donor_ids'];
 
-        $syncData = [];
-        foreach ($request->donor_ids as $donorId) {
-            $syncData[$donorId] = [
-                'donated_at' => $donationSession->session_date,
-                'location' => $donationSession->location,
-            ];
-        }
-
-        $donationSession->donors()->syncWithoutDetaching($syncData);
-
-        // Update last_donation_date for added donors based on all their sessions
-        foreach ($request->donor_ids as $donorId) {
-            $donor = BloodDonor::find($donorId);
-            $donor->update(['last_donation_date' => $donor->donationSessions()->max('donated_at')]);
-        }
+        // Delegasi ke service — menghilangkan N+1 dengan BloodDonor::findMany()
+        $this->donationSessionService->addDonors($donationSession, $donorIds);
 
         return redirect()->route('donation-sessions.show', $donationSession)
-            ->with('success', count($request->donor_ids).' donors added successfully.');
+            ->with('success', count($donorIds) . ' donors added successfully.');
     }
 
-    public function removeDonor(DonationSession $donationSession, BloodDonor $donor)
+    public function removeDonor(DonationSession $donationSession, BloodDonor $donor): RedirectResponse
     {
         $donationSession->donors()->detach($donor->id);
 
@@ -78,36 +68,15 @@ class DonationSessionController extends Controller
         return back()->with('success', 'Donor removed from session.');
     }
 
-    public function createAndAddDonor(Request $request, DonationSession $donationSession)
+    public function createAndAddDonor(CreateAndAddDonorRequest $request, DonationSession $donationSession): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:255',
-            'blood_type' => 'required|in:A,B,AB,O',
-            'rhesus' => 'required|in:+,-',
-        ]);
+        $this->donationSessionService->createAndAddDonor($donationSession, $request->validated());
 
-        DB::transaction(function () use ($validated, $donationSession) {
-            $contact = Contact::create(['name' => $validated['name']]);
-            $contact->phones()->create(['phone' => $validated['phone'], 'is_primary' => true]);
-
-            $donor = BloodDonor::create([
-                'contact_id' => $contact->id,
-                'blood_type' => $validated['blood_type'],
-                'rhesus' => $validated['rhesus'],
-                'last_donation_date' => $donationSession->session_date,
-            ]);
-
-            $donationSession->donors()->attach($donor->id, [
-                'donated_at' => $donationSession->session_date,
-                'location' => $donationSession->location,
-            ]);
-        });
-
-        return redirect()->route('donation-sessions.show', $donationSession)->with('success', 'New donor registered and added to session.');
+        return redirect()->route('donation-sessions.show', $donationSession)
+            ->with('success', 'New donor registered and added to session.');
     }
 
-    public function destroy(DonationSession $donationSession)
+    public function destroy(DonationSession $donationSession): RedirectResponse
     {
         $donationSession->delete();
 

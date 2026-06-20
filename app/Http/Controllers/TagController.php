@@ -1,37 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Tag;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreTagRequest;
+use Illuminate\Http\RedirectResponse;
 
 class TagController extends Controller
 {
-    public function store(Request $request)
+    public function store(StoreTagRequest $request): RedirectResponse
     {
         $this->authorizeSuperAdmin();
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:tags,name',
-        ]);
-
-        Tag::create($validated);
+        Tag::create($request->validated());
 
         return back()->with('success', 'Tag created successfully.');
     }
 
-    public function destroy(Tag $tag)
+    public function destroy(Tag $tag): RedirectResponse
     {
         $this->authorizeSuperAdmin();
         $tag->delete();
 
         return back()->with('success', 'Tag deleted successfully.');
-    }
-
-    protected function authorizeSuperAdmin()
-    {
-        if (! auth()->user()->isSuperAdmin()) {
-            abort(403, 'Unauthorized access.');
-        }
     }
 }

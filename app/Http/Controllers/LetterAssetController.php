@@ -1,17 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreLetterAssetRequest;
 use App\Models\LetterAsset;
+use App\Services\LetterAssetService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\ImageManager;
+use Illuminate\View\View;
 
 class LetterAssetController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        private readonly LetterAssetService $letterAssetService
+    ) {}
+
+    public function index(Request $request): View
     {
         $query = LetterAsset::query()->latest();
 
@@ -24,43 +31,14 @@ class LetterAssetController extends Controller
         return view('letter_assets.index', compact('assets'));
     }
 
-    public function store(Request $request)
+    public function store(StoreLetterAssetRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'type' => 'required|in:logo,kop,ttd',
-            'name' => 'required|string|max:255',
-            'file' => 'required|image|mimes:jpeg,png,jpg,svg|max:2048',
-        ]);
-
-        $path = $request->file('file')->store('letter_assets');
-
-        // Resize image if it's too large to prevent out of memory errors
-        try {
-            $absolutePath = storage_path('app/private/'.$path);
-            $manager = new ImageManager(new Driver);
-            $image = $manager->decodePath($absolutePath);
-
-            if ($image->width() > 800) {
-                // Resize to max 800px width, keeping aspect ratio
-                $image->scale(width: 800);
-                $image->save($absolutePath);
-            }
-        } catch (\Exception $e) {
-            // If resizing fails, continue with original file
-            Log::error('Image resize failed: '.$e->getMessage());
-        }
-
-        LetterAsset::create([
-            'type' => $validated['type'],
-            'name' => $validated['name'],
-            'file_path' => $path,
-            'created_by' => auth()->id(),
-        ]);
+        $this->letterAssetService->store($request->validated(), $request->file('file'));
 
         return back()->with('success', 'Asset uploaded successfully.');
     }
 
-    public function destroy(LetterAsset $letterAsset)
+    public function destroy(LetterAsset $letterAsset): RedirectResponse
     {
         if ($letterAsset->file_path && Storage::disk('local')->exists($letterAsset->file_path)) {
             Storage::disk('local')->delete($letterAsset->file_path);

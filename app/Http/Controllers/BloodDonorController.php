@@ -1,145 +1,112 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Exports\BloodDonorsExport;
-use App\Imports\BloodDonorsImport;
+use App\Http\Requests\ImportFileRequest;
+use App\Http\Requests\StoreBloodDonorRequest;
+use App\Http\Requests\StoreBloodDonorWithContactRequest;
+use App\Http\Requests\StoreDonationRequest;
+use App\Http\Requests\UpdateBloodDonorRequest;
 use App\Models\BloodDonor;
 use App\Models\Contact;
 use App\Models\DonationSession;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Services\BloodDonorService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class BloodDonorController extends Controller
 {
-    public function index()
+    public function __construct(
+        private readonly BloodDonorService $bloodDonorService
+    ) {}
+
+    public function index(): View
     {
-        $donors = BloodDonor::with(['contact', 'donationSessions'])->paginate(15);
-        $allDonors = BloodDonor::with('contact')->get()->map(function ($donor) {
-            return [
-                'id' => $donor->id,
-                'name' => $donor->contact->name,
-                'phone' => $donor->contact->phone,
-                'type' => $donor->blood_type.$donor->rhesus,
-            ];
-        });
+        $donors    = BloodDonor::with(['contact', 'donationSessions'])->paginate(15);
+        $allDonors = BloodDonor::with('contact')->get()->map(fn (BloodDonor $donor) => [
+            'id'    => $donor->id,
+            'name'  => $donor->contact->name,
+            'phone' => $donor->contact->phone,
+            'type'  => $donor->blood_type . $donor->rhesus,
+        ]);
 
         return view('blood_donors.index', compact('donors', 'allDonors'));
     }
 
-    public function create()
+    public function create(): View
     {
         $contacts = Contact::doesntHave('bloodDonor')->get();
 
         return view('blood_donors.create', compact('contacts'));
     }
 
-    public function store(Request $request)
+    public function store(StoreBloodDonorRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'contact_id' => 'required|exists:contacts,id|unique:blood_donors',
-            'blood_type' => 'required|in:A,B,AB,O',
-            'rhesus' => 'required|in:+,-',
-            'last_donation_date' => 'nullable|date',
-        ]);
-
-        BloodDonor::create($validated);
+        BloodDonor::create($request->validated());
 
         return redirect()->route('blood-donors.index')->with('success', 'Blood donor record created.');
     }
 
-    public function edit(BloodDonor $bloodDonor)
+    public function edit(BloodDonor $bloodDonor): View
     {
         return view('blood_donors.edit', compact('bloodDonor'));
     }
 
-    public function update(Request $request, BloodDonor $bloodDonor)
+    public function update(UpdateBloodDonorRequest $request, BloodDonor $bloodDonor): RedirectResponse
     {
-        $validated = $request->validate([
-            'blood_type' => 'required|in:A,B,AB,O',
-            'rhesus' => 'required|in:+,-',
-            'last_donation_date' => 'nullable|date',
-        ]);
-
-        $bloodDonor->update($validated);
+        $bloodDonor->update($request->validated());
 
         return redirect()->route('blood-donors.index')->with('success', 'Blood donor record updated.');
     }
 
-    public function storeWithContact(Request $request)
+    public function storeWithContact(StoreBloodDonorWithContactRequest $request): RedirectResponse
     {
-        $validatedContact = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:255|unique:contacts',
-            'email' => 'nullable|email|max:255',
-            'organization' => 'nullable|string|max:255',
-        ]);
+        $data = $request->validated();
 
-        $validatedDonor = $request->validate([
-            'blood_type' => 'required|in:A,B,AB,O',
-            'rhesus' => 'required|in:+,-',
-            'last_donation_date' => 'nullable|date',
-        ]);
+        $contactData = array_intersect_key($data, array_flip(['name', 'phone', 'email', 'organization']));
+        $donorData   = array_intersect_key($data, array_flip(['blood_type', 'rhesus', 'last_donation_date']));
 
-        DB::transaction(function () use ($validatedContact, $validatedDonor) {
-            $contact = Contact::create($validatedContact);
-
-            $validatedDonor['contact_id'] = $contact->id;
-            BloodDonor::create($validatedDonor);
-        });
+        $this->bloodDonorService->createWithContact($contactData, $donorData);
 
         return redirect()->route('blood-donors.index')->with('success', 'New contact created and registered as blood donor.');
     }
 
-    public function storeDonation(Request $request, BloodDonor $bloodDonor)
+    public function storeDonation(StoreDonationRequest $request, BloodDonor $bloodDonor): RedirectResponse
     {
-        $validated = $request->validate([
-            'donated_at' => 'required|date',
-            'location' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
-        ]);
+        $data = $request->validated();
 
         $session = DonationSession::firstOrCreate(
-            ['session_date' => $validated['donated_at'], 'location' => $validated['location']],
+            ['session_date' => $data['donated_at'], 'location' => $data['location'] ?? null],
         );
 
-        $session->donors()->syncWithoutDetaching([
-            $bloodDonor->id => [
-                'donated_at' => $validated['donated_at'],
-                'location' => $validated['location'],
-                'notes' => $validated['notes'],
-            ],
-        ]);
-
-        // Update the last_donation_date to be the most recent
-        $latestDonationDate = $bloodDonor->donationSessions()->max('donated_at');
-        $bloodDonor->update(['last_donation_date' => $latestDonationDate]);
+        $this->bloodDonorService->logDonation($bloodDonor, $data, $session);
 
         return redirect()->route('blood-donors.index')->with('success', 'Donation logged successfully.');
     }
 
-    public function destroy(BloodDonor $bloodDonor)
+    public function destroy(BloodDonor $bloodDonor): RedirectResponse
     {
         $bloodDonor->delete();
 
         return redirect()->route('blood-donors.index')->with('success', 'Blood donor record deleted.');
     }
 
-    public function export()
+    public function export(): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\Response
     {
         return (new BloodDonorsExport)->download();
     }
 
-    public function template()
+    public function template(): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\Response
     {
         return (new BloodDonorsExport)->template();
     }
 
-    public function import(Request $request)
+    public function import(ImportFileRequest $request): RedirectResponse
     {
-        $request->validate(['file' => 'required|file|mimes:csv,txt|max:5000']);
-
-        $count = (new BloodDonorsImport)->upload($request->file('file')->getRealPath());
+        $count = (new \App\Imports\BloodDonorsImport)->upload($request->file('file')->getRealPath());
 
         return redirect()->route('blood-donors.index')->with('success', "{$count} blood donors imported successfully.");
     }
