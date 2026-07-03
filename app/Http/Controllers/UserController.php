@@ -8,6 +8,7 @@ use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -15,7 +16,8 @@ class UserController extends Controller
     {
         $this->authorizeAdmin();
         $users = User::latest()->paginate(10);
-        return view('users.index', compact('users'));
+        $roles = Role::all();
+        return view('users.index', compact('users', 'roles'));
     }
 
     public function store(Request $request)
@@ -26,12 +28,12 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'string', 'in:super_admin,admin,staff'],
+            'role' => ['required', 'string', 'exists:roles,name'],
         ]);
 
-        // Only super_admin can create another super_admin or admin
-        if ($request->role !== 'staff' && !auth()->user()->isSuperAdmin()) {
-            return back()->withErrors(['role' => 'Only Super Admins can assign administrative roles.']);
+        // Only super_admin can create super_admin
+        if ($request->role === 'super_admin' && !auth()->user()->isSuperAdmin()) {
+            return back()->withErrors(['role' => 'Only Super Admins can assign super_admin role.']);
         }
 
         $user = User::create([
@@ -40,6 +42,8 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->role,
         ]);
+
+        $user->assignRole($request->role);
 
         ActivityLogger::log('created', $user, "Created user account: {$user->name} ({$user->role})");
 
@@ -53,7 +57,7 @@ class UserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'role' => ['required', 'string', 'in:super_admin,admin,staff'],
+            'role' => ['required', 'string', 'exists:roles,name'],
         ]);
 
         // Permission check
@@ -61,12 +65,15 @@ class UserController extends Controller
              abort(403, 'You cannot edit a Super Admin.');
         }
 
-        if ($request->role !== $user->role && !auth()->user()->isSuperAdmin()) {
-            return back()->withErrors(['role' => 'Only Super Admins can change user roles.']);
+        if ($request->role === 'super_admin' && !auth()->user()->isSuperAdmin()) {
+            return back()->withErrors(['role' => 'Only Super Admins can assign super_admin role.']);
         }
 
         $oldRole = $user->role;
         $user->update($request->only(['name', 'email', 'role']));
+        
+        // Sync spatie role
+        $user->syncRoles([$request->role]);
 
         if ($request->filled('password')) {
             $request->validate(['password' => ['confirmed', Rules\Password::defaults()]]);

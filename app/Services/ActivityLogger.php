@@ -2,9 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\ActivityLog;
-use Illuminate\Support\Facades\Auth;
-
 class ActivityLogger
 {
     /**
@@ -17,14 +14,15 @@ class ActivityLogger
      */
     public static function log(string $action, $model, string $description, ?array $metadata = null): void
     {
-        ActivityLog::create([
-            'user_id'    => Auth::id(),
-            'user_name'  => Auth::user()?->name ?? 'System',
-            'action'     => $action,
-            'model_type' => class_basename($model),
-            'model_id'   => $model->id ?? null,
-            'description'=> $description,
-            'metadata'   => $metadata,
-        ]);
+        $activity = activity()
+            ->causedBy(auth()->user())
+            ->performedOn($model)
+            ->event($action);
+            
+        if ($metadata) {
+            $activity->withProperties($metadata);
+        }
+            
+        $activity->log($description);
     }
 }

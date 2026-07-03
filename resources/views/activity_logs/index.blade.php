@@ -62,26 +62,26 @@
                             @forelse($logs as $log)
                                 <tr class="hover:bg-gray-50/50 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-bold text-gray-900">{{ $log->user_name ?: 'System' }}</div>
+                                        <div class="text-sm font-bold text-gray-900">{{ $log->causer->name ?? 'System' }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                                            {{ $log->action === 'created' ? 'bg-green-100 text-green-700' : '' }}
-                                            {{ $log->action === 'updated' ? 'bg-blue-100 text-blue-700' : '' }}
-                                            {{ $log->action === 'deleted' ? 'bg-red-100 text-red-700' : '' }}">
-                                            {{ $log->action }}
+                                            {{ $log->event === 'created' ? 'bg-green-100 text-green-700' : '' }}
+                                            {{ $log->event === 'updated' ? 'bg-blue-100 text-blue-700' : '' }}
+                                            {{ $log->event === 'deleted' ? 'bg-red-100 text-red-700' : '' }}">
+                                            {{ $log->event }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900 font-bold">{{ $log->model_type }}</div>
-                                        <div class="text-xs text-gray-600 font-bold">ID: {{ $log->model_id }}</div>
+                                        <div class="text-sm text-gray-900 font-bold">{{ class_basename($log->subject_type) }}</div>
+                                        <div class="text-xs text-gray-600 font-bold">ID: {{ $log->subject_id }}</div>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="text-sm text-gray-900 font-medium">{{ $log->description }}</div>
-                                        @if($log->metadata)
+                                        @if($log->properties && $log->properties->isNotEmpty())
                                             <details class="mt-2 text-xs text-gray-700 cursor-pointer">
                                                 <summary class="hover:text-gray-900 font-bold underline">View Changes</summary>
-                                                <pre class="mt-2 p-3 bg-gray-100 rounded-lg overflow-x-auto text-gray-900 border border-gray-200">{{ json_encode($log->metadata, JSON_PRETTY_PRINT) }}</pre>
+                                                <pre class="mt-2 p-3 bg-gray-100 rounded-lg overflow-x-auto text-gray-900 border border-gray-200">{{ json_encode($log->properties, JSON_PRETTY_PRINT) }}</pre>
                                             </details>
                                         @endif
                                     </td>

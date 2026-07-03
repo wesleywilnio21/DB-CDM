@@ -65,9 +65,9 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                                                {{ $user->role === 'super_admin' ? 'bg-amber-100 text-amber-800 border border-amber-200' : '' }}
-                                                {{ $user->role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : '' }}
-                                                {{ $user->role === 'staff' ? 'bg-gray-100 text-gray-800 border border-gray-200' : '' }}">
+                                                {{ $user->role === 'super_admin' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 
+                                                   ($user->role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 
+                                                   ($user->role === 'staff' ? 'bg-gray-100 text-gray-800 border border-gray-200' : 'bg-blue-100 text-blue-800 border border-blue-200' )) }}">
                                                 {{ str_replace('_', ' ', $user->role) }}
                                             </span>
                                         </td>
@@ -127,11 +127,12 @@
                         <div>
                             <x-input-label for="role" :value="__('Role')" class="text-gray-900 font-bold" />
                             <select name="role" class="mt-1 block w-full border-gray-300 rounded-xl focus:border-gray-900 focus:ring-0">
-                                <option value="staff">Staff</option>
-                                <option value="admin">Admin</option>
-                                @if(Auth::user()->isSuperAdmin())
-                                    <option value="super_admin">Super Admin</option>
-                                @endif
+                                @foreach($roles as $role)
+                                    @if($role->name === 'super_admin' && !Auth::user()->isSuperAdmin())
+                                        @continue
+                                    @endif
+                                    <option value="{{$role->name}}">{{ucwords(str_replace('_', ' ', $role->name))}}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div>
@@ -174,9 +175,11 @@
                         <div>
                             <x-input-label for="edit_role" :value="__('Role')" class="text-gray-900 font-bold" />
                             <select name="role" x-model="editUser.role" class="mt-1 block w-full border-gray-300 rounded-xl focus:border-gray-900 focus:ring-0">
-                                <option value="staff">Staff</option>
-                                <option value="admin">Admin</option>
-                                <option value="super_admin" :disabled="editUser.role === 'super_admin' && !{{ Auth::user()->isSuperAdmin() ? 'true' : 'false' }}">Super Admin</option>
+                                @foreach($roles as $role)
+                                    <option value="{{$role->name}}" :disabled="'{{$role->name}}' === 'super_admin' && !{{ Auth::user()->isSuperAdmin() ? 'true' : 'false' }}">
+                                        {{ucwords(str_replace('_', ' ', $role->name))}}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="pt-4 border-t border-gray-100">

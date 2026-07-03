@@ -6,7 +6,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                        <x-application-logo class="block h-14 w-auto fill-current text-gray-800" />
                     </a>
                 </div>
 
@@ -24,12 +24,43 @@
                     <x-nav-link :href="route('blood-donors.index')" :active="request()->routeIs('blood-donors.*')">
                         {{ __('Blood Donors') }}
                     </x-nav-link>
+
+                    <!-- Lettering Dropdown -->
+                    <div class="hidden sm:flex sm:items-center">
+                        <x-dropdown align="right" width="48">
+                            <x-slot name="trigger">
+                                <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('letter-documents.*') || request()->routeIs('letter-templates.*') ? 'border-indigo-400 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out h-full mt-1">
+                                    <div>{{ __('Lettering') }}</div>
+                                    <div class="ms-1">
+                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </button>
+                            </x-slot>
+
+                            <x-slot name="content">
+                                <x-dropdown-link :href="route('letter-documents.index')">
+                                    {{ __('Letters') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('letter-templates.index')">
+                                    {{ __('Templates') }}
+                                </x-dropdown-link>
+                            </x-slot>
+                        </x-dropdown>
+                    </div>
+
                     @if(Auth::user()->isAdmin())
                     <x-nav-link :href="route('activity-logs.index')" :active="request()->routeIs('activity-logs.*')">
                         {{ __('Activity Log') }}
                     </x-nav-link>
                     <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
                         {{ __('User Management') }}
+                    </x-nav-link>
+                    @endif
+                    @if(Auth::user()->isSuperAdmin())
+                    <x-nav-link :href="route('roles.index')" :active="request()->routeIs('roles.*')">
+                        {{ __('Role Management') }}
                     </x-nav-link>
                     @endif
                 </div>
@@ -96,12 +127,29 @@
             <x-responsive-nav-link :href="route('blood-donors.index')" :active="request()->routeIs('blood-donors.*')">
                 {{ __('Blood Donors') }}
             </x-responsive-nav-link>
+
+            <!-- Lettering Section (Responsive) -->
+            <div class="block w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-start text-base font-medium text-gray-600 bg-gray-50">
+                {{ __('Lettering') }}
+            </div>
+            <x-responsive-nav-link :href="route('letter-documents.index')" :active="request()->routeIs('letter-documents.*')" class="pl-8">
+                {{ __('Letters') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('letter-templates.index')" :active="request()->routeIs('letter-templates.*')" class="pl-8">
+                {{ __('Templates') }}
+            </x-responsive-nav-link>
+
             @if(Auth::user()->isAdmin())
             <x-responsive-nav-link :href="route('activity-logs.index')" :active="request()->routeIs('activity-logs.*')">
                 {{ __('Activity Log') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
                 {{ __('User Management') }}
+            </x-responsive-nav-link>
+            @endif
+            @if(Auth::user()->isSuperAdmin())
+            <x-responsive-nav-link :href="route('roles.index')" :active="request()->routeIs('roles.*')">
+                {{ __('Role Management') }}
             </x-responsive-nav-link>
             @endif
         </div>
