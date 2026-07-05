@@ -34,7 +34,7 @@ class EventLetterController extends Controller
 
     public function create(Event $event): View
     {
-        $preview             = EventLetter::generateForEvent($event);
+        $preview             = $this->eventLetterService->generateForEvent($event);
         $nextSequence        = $preview['sequence'];
         $previewLetterNumber = $preview['letter_number'];
         $defaultCity         = AppSetting::get('org_city_default', config('organization.city', 'Jakarta'));
@@ -51,7 +51,7 @@ class EventLetterController extends Controller
         $letter               = new EventLetter($request->validated());
         $letter->event_id     = $event->id;
 
-        $generated              = EventLetter::generateForEvent($event, $request->input('event_code'));
+        $generated              = $this->eventLetterService->generateForEvent($event, $request->input('event_code'));
         $letter->letter_number   = $generated['letter_number'];
         $letter->letter_sequence = $generated['sequence'];
 

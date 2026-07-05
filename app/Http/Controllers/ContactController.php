@@ -14,40 +14,29 @@ use App\Models\Contact;
 use App\Models\Event;
 use App\Models\Tag;
 use App\Services\ActivityLogger;
+use App\Services\ContactService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class ContactController extends Controller
 {
+    public function __construct(
+        private readonly ContactService $contactService
+    ) {}
+
     public function index(\Illuminate\Http\Request $request): View
     {
-        $query = Contact::with(['tags', 'events']);
+        $contacts = Contact::with(['tags', 'events'])
+            ->filter([
+                'search' => $request->input('search'),
+                'tag'    => $request->input('tag'),
+                'event'  => $request->input('event'),
+            ])
+            ->paginate(15)
+            ->withQueryString();
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search): void {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhereHas('phones', function ($pq) use ($search): void {
-                        $pq->where('phone', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        if ($request->filled('tag')) {
-            $query->whereHas('tags', function ($q) use ($request): void {
-                $q->where('tags.id', $request->tag);
-            });
-        }
-
-        if ($request->filled('event')) {
-            $query->whereHas('events', function ($q) use ($request): void {
-                $q->where('events.id', $request->event);
-            });
-        }
-
-        $contacts = $query->paginate(15)->withQueryString();
-        $tags     = Tag::all();
-        $events   = Event::all();
+        $tags   = Tag::all();
+        $events = Event::all();
 
         return view('contacts.index', compact('contacts', 'tags', 'events'));
     }
@@ -62,24 +51,12 @@ class ContactController extends Controller
 
     public function store(StoreContactRequest $request): RedirectResponse
     {
-        $contact = Contact::create($request->except('phones'));
-
-        if ($request->has('phones')) {
-            $phonesData = array_map(function ($phone, $index) {
-                return ['phone' => $phone, 'is_primary' => $index === 0];
-            }, $request->phones, array_keys($request->phones));
-            $contact->phones()->createMany($phonesData);
-        }
-
-        if ($request->has('tags')) {
-            $contact->tags()->sync($request->tags);
-        }
-
-        if ($request->has('events')) {
-            $contact->events()->sync($request->events);
-        }
-
-        ActivityLogger::log('created', $contact, "Created contact: {$contact->name}");
+        $this->contactService->createContact(
+            $request->except(['phones', 'tags', 'events']),
+            $request->input('phones'),
+            $request->input('tags'),
+            $request->input('events')
+        );
 
         return redirect()->route('contacts.index')->with('success', 'Contact created successfully.');
     }
@@ -102,29 +79,13 @@ class ContactController extends Controller
 
     public function update(UpdateContactRequest $request, Contact $contact): RedirectResponse
     {
-        $oldData           = $contact->only(['name', 'email', 'organization']);
-        $oldData['phones'] = $contact->phones->pluck('phone')->toArray();
-
-        $contact->update($request->except('phones'));
-
-        if ($request->has('phones')) {
-            $contact->phones()->delete();
-            $phonesData = array_map(function ($phone, $index) {
-                return ['phone' => $phone, 'is_primary' => $index === 0];
-            }, $request->phones, array_keys($request->phones));
-            $contact->phones()->createMany($phonesData);
-        }
-
-        $contact->tags()->sync($request->tags ?? []);
-        $contact->events()->sync($request->events ?? []);
-
-        $newData           = $contact->only(['name', 'email', 'organization']);
-        $newData['phones'] = $request->phones;
-
-        ActivityLogger::log('updated', $contact, "Updated contact: {$contact->name}", [
-            'old' => $oldData,
-            'new' => $newData,
-        ]);
+        $this->contactService->updateContact(
+            $contact,
+            $request->except(['phones', 'tags', 'events']),
+            $request->input('phones'),
+            $request->input('tags'),
+            $request->input('events')
+        );
 
         return redirect()->route('contacts.index')->with('success', 'Contact updated successfully.');
     }
@@ -159,7 +120,7 @@ class ContactController extends Controller
 
     public function quickAddToEvent(QuickAddToEventRequest $request, Contact $contact): RedirectResponse
     {
-        $contact->events()->syncWithoutDetaching([$request->event_id]);
+        $this->contactService->quickAddToEvent($contact, (int) $request->event_id);
 
         return back()->with('success', 'Contact added to event.');
     }

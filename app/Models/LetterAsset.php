@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 
 class LetterAsset extends Model
@@ -17,22 +21,22 @@ class LetterAsset extends Model
         'created_by',
     ];
 
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function scopeLogos($query)
+    public function scopeLogos(Builder $query): Builder
     {
         return $query->where('type', 'logo');
     }
 
-    public function scopeKops($query)
+    public function scopeKops(Builder $query): Builder
     {
         return $query->where('type', 'kop');
     }
 
-    public function scopeTtds($query)
+    public function scopeTtds(Builder $query): Builder
     {
         return $query->where('type', 'ttd');
     }

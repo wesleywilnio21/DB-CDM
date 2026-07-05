@@ -57,6 +57,44 @@ class EventLetterService
     }
 
     /**
+     * Generate the next sequence and letter number for an event.
+     * Optionally accept a custom event code, otherwise generate from event name.
+     */
+    public function generateForEvent(Event $event, ?string $customCode = null): array
+    {
+        // Find highest sequence for this event
+        $maxSequence = EventLetter::where('event_id', $event->id)->max('letter_sequence') ?? 0;
+        $nextSequence = $maxSequence + 1;
+
+        // Generate Roman numeral for month
+        $romans = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+        $monthRoman = $romans[date('n') - 1];
+
+        $year = date('Y');
+
+        if (! $customCode) {
+            // Generate initials from event name (e.g., "Donor Darah Masal" -> DDM)
+            $words = explode(' ', $event->name);
+            $initials = '';
+            foreach ($words as $word) {
+                if (strlen($word) > 0) {
+                    $initials .= strtoupper(substr($word, 0, 1));
+                }
+            }
+            $customCode = $initials;
+        }
+
+        // Format: 001/CDM/DDM/V/2026
+        $formattedSequence = str_pad((string) $nextSequence, 3, '0', STR_PAD_LEFT);
+        $letterNumber = "{$formattedSequence}/CDM/{$customCode}/{$monthRoman}/{$year}";
+
+        return [
+            'sequence' => $nextSequence,
+            'letter_number' => $letterNumber,
+        ];
+    }
+
+    /**
      * Generate surat massal untuk semua nama, simpan ke DB, buat PDF, dan kembalikan path ZIP.
      */
     public function bulkGenerate(Event $event, LetterTemplate $template, Collection $names): string
@@ -68,7 +106,7 @@ class EventLetterService
         $zip->open($zipPath, ZipArchive::CREATE);
 
         foreach ($names as $name) {
-            $generated = EventLetter::generateForEvent($event, null);
+            $generated = $this->generateForEvent($event, null);
             $body      = str_replace('{nama}', $name, $template->body);
 
             $letter = new EventLetter([

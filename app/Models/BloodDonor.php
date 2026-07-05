@@ -24,18 +24,21 @@ class BloodDonor extends Model
         'last_donation_date' => 'date',
     ];
 
-    public function contact()
+    public function contact(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Contact::class);
     }
 
-    public function getNextEligibleDateAttribute()
+    protected function nextEligibleDate(): \Illuminate\Database\Eloquent\Casts\Attribute
     {
-        if (!$this->last_donation_date) {
-            return null;
-        }
-
-        return Carbon::parse($this->last_donation_date)->addDays(60);
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: function () {
+                if (!$this->last_donation_date) {
+                    return null;
+                }
+                return Carbon::parse($this->last_donation_date)->addDays(60);
+            }
+        );
     }
 
     public function donationSessions(): \Illuminate\Database\Eloquent\Relations\BelongsToMany

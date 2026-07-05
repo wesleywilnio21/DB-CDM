@@ -8,12 +8,16 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private readonly UserService $userService
+    ) {}
+
     public function index(): View
     {
         $this->authorizeSuperAdmin();
@@ -26,16 +30,7 @@ class UserController extends Controller
     {
         $this->authorizeSuperAdmin();
 
-        $data     = $request->validated();
-        $user     = User::create([
-            'name'     => $data['name'],
-            'username' => $data['username'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-            'role'     => $data['role'],
-        ]);
-
-        ActivityLogger::log('created', $user, "Created user account: {$user->name} ({$user->role})");
+        $this->userService->createUser($request->validated());
 
         return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
@@ -44,29 +39,7 @@ class UserController extends Controller
     {
         $this->authorizeSuperAdmin();
 
-        // Cegah edit Super Admin lain
-        if ($user->isSuperAdmin() && $user->id !== auth()->id()) {
-            abort(403, 'You cannot edit another Super Admin.');
-        }
-
-        $data    = $request->validated();
-        $oldRole = $user->role;
-
-        $user->update(array_filter([
-            'name'     => $data['name'],
-            'username' => $data['username'],
-            'email'    => $data['email'],
-            'role'     => $data['role'],
-        ], fn ($v) => $v !== null));
-
-        if (filled($data['password'] ?? null)) {
-            $user->update(['password' => Hash::make($data['password'])]);
-        }
-
-        ActivityLogger::log('updated', $user, "Updated user account: {$user->name}", [
-            'old_role' => $oldRole,
-            'new_role' => $user->role,
-        ]);
+        $this->userService->updateUser($user, $request->validated());
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }
