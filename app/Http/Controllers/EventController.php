@@ -47,7 +47,7 @@ class EventController extends Controller
         $event->load(['contacts' => function ($q): void {
             $q->orderBy('name');
         }]);
-        $allContacts    = Contact::orderBy('name')->get();
+        $allContacts = Contact::orderBy('name')->get();
         $totalAttendees = $event->contacts->count() + $event->contacts->sum('pivot.guest_count');
 
         return view('events.show', compact('event', 'allContacts', 'totalAttendees'));
@@ -55,17 +55,17 @@ class EventController extends Controller
 
     public function addContact(AddContactToEventRequest $request, Event $event): RedirectResponse
     {
-        $data     = $request->validated();
+        $data = $request->validated();
         $syncData = [];
 
         foreach ($data['contact_ids'] as $contactId) {
-            $syncData[$contactId] = ['guest_count' => $request->input("guest_counts.{$contactId}", 0)];
+            $syncData[$contactId] = ['guest_count' => (int) $request->input("guest_counts.{$contactId}", 0)];
         }
 
         $this->eventService->addContacts($event, $syncData);
 
         return redirect()->route('events.show', $event)
-            ->with('success', count($data['contact_ids']) . ' participants added successfully.');
+            ->with('success', count($data['contact_ids']).' participants added successfully.');
     }
 
     public function updateGuestCount(UpdateGuestCountRequest $request, Event $event, Contact $contact): RedirectResponse
@@ -92,6 +92,8 @@ class EventController extends Controller
 
     public function destroy(Event $event): RedirectResponse
     {
+        $this->authorizeSuperAdmin();
+
         $event->delete();
 
         return redirect()->route('events.index')->with('success', 'Event deleted successfully.');

@@ -10,12 +10,15 @@ use App\Http\Requests\StoreBloodDonorRequest;
 use App\Http\Requests\StoreBloodDonorWithContactRequest;
 use App\Http\Requests\StoreDonationRequest;
 use App\Http\Requests\UpdateBloodDonorRequest;
+use App\Imports\BloodDonorsImport;
 use App\Models\BloodDonor;
 use App\Models\Contact;
 use App\Models\DonationSession;
 use App\Services\BloodDonorService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BloodDonorController extends Controller
 {
@@ -25,12 +28,12 @@ class BloodDonorController extends Controller
 
     public function index(): View
     {
-        $donors    = BloodDonor::with(['contact', 'donationSessions'])->paginate(15);
+        $donors = BloodDonor::with(['contact', 'donationSessions'])->paginate(15);
         $allDonors = BloodDonor::with('contact')->get()->map(fn (BloodDonor $donor) => [
-            'id'    => $donor->id,
-            'name'  => $donor->contact->name,
+            'id' => $donor->id,
+            'name' => $donor->contact->name,
             'phone' => $donor->contact->phone,
-            'type'  => $donor->blood_type . $donor->rhesus,
+            'type' => $donor->blood_type.$donor->rhesus,
         ]);
 
         return view('blood_donors.index', compact('donors', 'allDonors'));
@@ -67,7 +70,7 @@ class BloodDonorController extends Controller
         $data = $request->validated();
 
         $contactData = array_intersect_key($data, array_flip(['name', 'phone', 'email', 'organization']));
-        $donorData   = array_intersect_key($data, array_flip(['blood_type', 'rhesus', 'last_donation_date']));
+        $donorData = array_intersect_key($data, array_flip(['blood_type', 'rhesus', 'last_donation_date']));
 
         $this->bloodDonorService->createWithContact($contactData, $donorData);
 
@@ -89,24 +92,26 @@ class BloodDonorController extends Controller
 
     public function destroy(BloodDonor $bloodDonor): RedirectResponse
     {
+        $this->authorizeSuperAdmin();
+
         $bloodDonor->delete();
 
         return redirect()->route('blood-donors.index')->with('success', 'Blood donor record deleted.');
     }
 
-    public function export(): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\Response
+    public function export(): StreamedResponse|Response
     {
         return (new BloodDonorsExport)->download();
     }
 
-    public function template(): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\Response
+    public function template(): StreamedResponse|Response
     {
         return (new BloodDonorsExport)->template();
     }
 
     public function import(ImportFileRequest $request): RedirectResponse
     {
-        $count = (new \App\Imports\BloodDonorsImport)->upload($request->file('file')->getRealPath());
+        $count = (new BloodDonorsImport)->upload($request->file('file')->getRealPath());
 
         return redirect()->route('blood-donors.index')->with('success', "{$count} blood donors imported successfully.");
     }

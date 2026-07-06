@@ -14,8 +14,8 @@ class DashboardController extends Controller
     public function index(): View
     {
         $totalContacts = Contact::count();
-        $totalEvents   = Event::count();
-        $totalDonors   = BloodDonor::count();
+        $totalEvents = Event::count();
+        $totalDonors = BloodDonor::count();
 
         // Menggunakan scopeEligible (query DB) menggantikan get()->filter() di PHP
         $eligibleDonors = BloodDonor::eligible()->count();

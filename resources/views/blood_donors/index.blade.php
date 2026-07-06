@@ -179,11 +179,13 @@
                                                     Edit
                                                 </button>
 
+                                                @if(Auth::user()->isSuperAdmin())
                                                 <form action="{{ route('blood-donors.destroy', $donor) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this donor record?');" class="inline-block">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="text-red-500 hover:text-red-700 transition-colors">Delete</button>
                                                 </form>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -288,7 +290,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Phone <span class="text-red-500">*</span></label>
-                                        <input type="text" name="phone" value="{{ old('phone') }}" required class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-gray-900" />
+                                        <input type="number" name="phone" value="{{ old('phone') }}" required class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-gray-900" />
                                         <x-input-error :messages="$errors->get('phone')" class="mt-1" />
                                     </div>
                                     <div>

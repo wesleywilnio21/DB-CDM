@@ -15,7 +15,7 @@
                     <form method="GET" action="{{ route('activity-logs.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-6 rounded-2xl border border-gray-100">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Action</label>
-                            <select name="action" class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm">
+                            <select name="action" class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-black">
                                 <option value="">All Actions</option>
                                 <option value="created" {{ request('action') == 'created' ? 'selected' : '' }}>Created</option>
                                 <option value="updated" {{ request('action') == 'updated' ? 'selected' : '' }}>Updated</option>
@@ -24,7 +24,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                            <select name="model" class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm">
+                            <select name="model" class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-black">
                                 <option value="">All Types</option>
                                 <option value="Contact" {{ request('model') == 'Contact' ? 'selected' : '' }}>Contact</option>
                                 <option value="Event" {{ request('model') == 'Event' ? 'selected' : '' }}>Event</option>
@@ -33,7 +33,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">User</label>
-                            <select name="user_id" class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm">
+                            <select name="user_id" class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-black">
                                 <option value="">All Users</option>
                                 @foreach($users as $user)
                                     <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>

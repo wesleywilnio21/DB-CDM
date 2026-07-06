@@ -15,11 +15,11 @@ class UserService
     public function createUser(array $data): User
     {
         $user = User::create([
-            'name'     => $data['name'],
+            'name' => $data['name'],
             'username' => $data['username'],
-            'email'    => $data['email'],
+            'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'role'     => $data['role'],
+            'role' => $data['role'],
         ]);
 
         ActivityLogger::log('created', $user, "Created user account: {$user->name} ({$user->role})");
@@ -40,10 +40,10 @@ class UserService
         $oldRole = $user->role;
 
         $user->update(array_filter([
-            'name'     => $data['name'],
+            'name' => $data['name'],
             'username' => $data['username'],
-            'email'    => $data['email'],
-            'role'     => $data['role'],
+            'email' => $data['email'],
+            'role' => $data['role'],
         ], fn ($v) => $v !== null));
 
         if (filled($data['password'] ?? null)) {

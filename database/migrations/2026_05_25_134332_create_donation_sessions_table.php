@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('donation_sessions', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
             $table->date('session_date');
             $table->string('location')->nullable();
             $table->text('notes')->nullable();

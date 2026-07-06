@@ -17,8 +17,8 @@ class StoreDonationRequest extends FormRequest
     {
         return [
             'donated_at' => 'required|date',
-            'location'   => 'nullable|string|max:255',
-            'notes'      => 'nullable|string',
+            'location' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
         ];
     }
 }

@@ -32,10 +32,13 @@
                                         <div class="text-xs text-gray-500">{{ $asset->created_at->format('M d, Y') }}</div>
                                     </div>
                                 </div>
-                                <form action="{{ route('letter-assets.destroy', $asset) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this logo?');">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:text-red-700 p-2">&times;</button>
-                                </form>
+                                <button type="button" x-on:click="$dispatch('open-modal', 'delete-asset-{{ $asset->id }}')" class="text-red-500 hover:text-red-700 p-2">&times;</button>
+                                <x-modal.delete 
+                                    name="delete-asset-{{ $asset->id }}"
+                                    title="Delete Header Logo"
+                                    message="Are you sure you want to delete the logo '{{ $asset->name }}'? This action cannot be undone."
+                                    action="{{ route('letter-assets.destroy', $asset) }}"
+                                />
                             </div>
                         @empty
                             <p class="text-sm text-gray-500 text-center py-4">No logos uploaded yet.</p>
@@ -59,10 +62,13 @@
                                         <div class="text-xs text-gray-500">{{ $asset->created_at->format('M d, Y') }}</div>
                                     </div>
                                 </div>
-                                <form action="{{ route('letter-assets.destroy', $asset) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this kop?');">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:text-red-700 p-2">&times;</button>
-                                </form>
+                                <button type="button" x-on:click="$dispatch('open-modal', 'delete-asset-{{ $asset->id }}')" class="text-red-500 hover:text-red-700 p-2">&times;</button>
+                                <x-modal.delete 
+                                    name="delete-asset-{{ $asset->id }}"
+                                    title="Delete Kop / Stempel"
+                                    message="Are you sure you want to delete the kop '{{ $asset->name }}'? This action cannot be undone."
+                                    action="{{ route('letter-assets.destroy', $asset) }}"
+                                />
                             </div>
                         @empty
                             <p class="text-sm text-gray-500 text-center py-4">No kop/stempel uploaded yet.</p>
@@ -86,10 +92,13 @@
                                         <div class="text-xs text-gray-500">{{ $asset->created_at->format('M d, Y') }}</div>
                                     </div>
                                 </div>
-                                <form action="{{ route('letter-assets.destroy', $asset) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this signature?');">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:text-red-700 p-2">&times;</button>
-                                </form>
+                                <button type="button" x-on:click="$dispatch('open-modal', 'delete-asset-{{ $asset->id }}')" class="text-red-500 hover:text-red-700 p-2">&times;</button>
+                                <x-modal.delete 
+                                    name="delete-asset-{{ $asset->id }}"
+                                    title="Delete Signature"
+                                    message="Are you sure you want to delete the signature '{{ $asset->name }}'? This action cannot be undone."
+                                    action="{{ route('letter-assets.destroy', $asset) }}"
+                                />
                             </div>
                         @empty
                             <p class="text-sm text-gray-500 text-center py-4">No signatures uploaded yet.</p>

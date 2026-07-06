@@ -34,6 +34,7 @@ class Contact extends Model
         return Attribute::make(
             get: function () {
                 $primary = $this->phones->where('is_primary', true)->first();
+
                 return $primary ? $primary->phone : ($this->phones->first()->phone ?? null);
             },
         );
@@ -42,7 +43,11 @@ class Contact extends Model
     protected function phone(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->primary_phone,
+            get: function () {
+                $primary = $this->phones->where('is_primary', true)->first();
+
+                return $primary ? $primary->phone : ($this->phones->first()->phone ?? null);
+            },
         );
     }
 
@@ -62,7 +67,7 @@ class Contact extends Model
     }
 
     /**
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      */
     public function scopeFilter(Builder $query, array $filters): Builder
     {
@@ -70,9 +75,9 @@ class Contact extends Model
             $filters['search'] ?? null,
             function (Builder $query, mixed $search): void {
                 $query->where(function (Builder $q) use ($search): void {
-                    $q->where('name', 'like', '%' . (string) $search . '%')
+                    $q->where('name', 'like', '%'.(string) $search.'%')
                         ->orWhereHas('phones', function (Builder $pq) use ($search): void {
-                            $pq->where('phone', 'like', '%' . (string) $search . '%');
+                            $pq->where('phone', 'like', '%'.(string) $search.'%');
                         });
                 });
             }

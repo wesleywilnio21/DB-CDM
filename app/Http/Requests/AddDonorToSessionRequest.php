@@ -16,7 +16,7 @@ class AddDonorToSessionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'donor_ids'   => 'required|array',
+            'donor_ids' => 'required|array',
             'donor_ids.*' => 'exists:blood_donors,id',
         ];
     }

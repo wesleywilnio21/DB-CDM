@@ -13,6 +13,8 @@ class ActivityLogController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorizeSuperAdmin();
+
         $query = ActivityLog::latest();
 
         if ($request->filled('action')) {
@@ -27,7 +29,7 @@ class ActivityLogController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        $logs  = $query->paginate(20)->withQueryString();
+        $logs = $query->paginate(20)->withQueryString();
         $users = User::all();
 
         return view('activity_logs.index', compact('logs', 'users'));

@@ -30,10 +30,6 @@ class User extends Authenticatable
         return in_array($this->role, ['super_admin', 'admin']);
     }
 
-    public function isStaff(): bool
-    {
-        return $this->role === 'staff';
-    }
 
     public function activityLogs(): HasMany
     {

@@ -17,7 +17,18 @@ class BloodDonorService
     public function createWithContact(array $contactData, array $donorData): BloodDonor
     {
         return DB::transaction(function () use ($contactData, $donorData): BloodDonor {
+            $phone = $contactData['phone'] ?? null;
+            unset($contactData['phone']);
+
             $contact = Contact::create($contactData);
+
+            if ($phone) {
+                $contact->phones()->create([
+                    'phone' => $phone,
+                    'is_primary' => true,
+                ]);
+            }
+
             $donorData['contact_id'] = $contact->id;
 
             return BloodDonor::create($donorData);
@@ -32,8 +43,8 @@ class BloodDonorService
         $session->donors()->syncWithoutDetaching([
             $donor->id => [
                 'donated_at' => $data['donated_at'],
-                'location'   => $data['location'] ?? null,
-                'notes'      => $data['notes'] ?? null,
+                'location' => $data['location'] ?? null,
+                'notes' => $data['notes'] ?? null,
             ],
         ]);
 

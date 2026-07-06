@@ -16,10 +16,10 @@ class AddContactToEventRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'contact_ids'   => 'required|array',
+            'contact_ids' => 'required|array',
             'contact_ids.*' => 'exists:contacts,id',
-            'guest_counts'  => 'nullable|array',
-            'guest_counts.*'=> 'integer|min:0',
+            'guest_counts' => 'nullable|array',
+            'guest_counts.*' => 'nullable|integer|min:0',
         ];
     }
 }

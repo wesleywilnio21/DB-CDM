@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\Tag;
 use App\Http\Requests\StoreTagRequest;
+use App\Models\Tag;
 use Illuminate\Http\RedirectResponse;
 
 class TagController extends Controller

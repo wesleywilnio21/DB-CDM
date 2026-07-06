@@ -13,6 +13,10 @@ use Illuminate\View\View;
 
 class LetterTemplateController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeSuperAdmin();
+    }
     public function index(): View
     {
         $templates = LetterTemplate::latest()->paginate(15);
@@ -23,8 +27,8 @@ class LetterTemplateController extends Controller
     public function create(): View
     {
         $logos = LetterAsset::logos()->latest()->get();
-        $kops  = LetterAsset::kops()->latest()->get();
-        $ttds  = LetterAsset::ttds()->latest()->get();
+        $kops = LetterAsset::kops()->latest()->get();
+        $ttds = LetterAsset::ttds()->latest()->get();
 
         return view('letter_templates.create', compact('logos', 'kops', 'ttds'));
     }
@@ -39,8 +43,8 @@ class LetterTemplateController extends Controller
     public function edit(LetterTemplate $letterTemplate): View
     {
         $logos = LetterAsset::logos()->latest()->get();
-        $kops  = LetterAsset::kops()->latest()->get();
-        $ttds  = LetterAsset::ttds()->latest()->get();
+        $kops = LetterAsset::kops()->latest()->get();
+        $ttds = LetterAsset::ttds()->latest()->get();
 
         return view('letter_templates.edit', compact('letterTemplate', 'logos', 'kops', 'ttds'));
     }

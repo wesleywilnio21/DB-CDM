@@ -16,7 +16,10 @@ use App\Models\Tag;
 use App\Services\ActivityLogger;
 use App\Services\ContactService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ContactController extends Controller
 {
@@ -24,18 +27,18 @@ class ContactController extends Controller
         private readonly ContactService $contactService
     ) {}
 
-    public function index(\Illuminate\Http\Request $request): View
+    public function index(Request $request): View
     {
         $contacts = Contact::with(['tags', 'events'])
             ->filter([
                 'search' => $request->input('search'),
-                'tag'    => $request->input('tag'),
-                'event'  => $request->input('event'),
+                'tag' => $request->input('tag'),
+                'event' => $request->input('event'),
             ])
             ->paginate(15)
             ->withQueryString();
 
-        $tags   = Tag::all();
+        $tags = Tag::all();
         $events = Event::all();
 
         return view('contacts.index', compact('contacts', 'tags', 'events'));
@@ -43,7 +46,7 @@ class ContactController extends Controller
 
     public function create(): View
     {
-        $tags   = Tag::all();
+        $tags = Tag::all();
         $events = Event::all();
 
         return view('contacts.create', compact('tags', 'events'));
@@ -70,7 +73,7 @@ class ContactController extends Controller
 
     public function edit(Contact $contact): View
     {
-        $tags   = Tag::all();
+        $tags = Tag::all();
         $events = Event::all();
         $contact->load(['tags', 'events']);
 
@@ -92,6 +95,8 @@ class ContactController extends Controller
 
     public function destroy(Contact $contact): RedirectResponse
     {
+        $this->authorizeSuperAdmin();
+
         $name = $contact->name;
         ActivityLogger::log('deleted', $contact, "Deleted contact: {$name}");
         $contact->delete();
@@ -101,12 +106,12 @@ class ContactController extends Controller
 
     // --- Excel Features ---
 
-    public function export(): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\Response
+    public function export(): StreamedResponse|Response
     {
         return (new ContactsExport)->download();
     }
 
-    public function downloadTemplate(): \Symfony\Component\HttpFoundation\StreamedResponse|\Illuminate\Http\Response
+    public function downloadTemplate(): StreamedResponse|Response
     {
         return (new ContactsExport)->template();
     }

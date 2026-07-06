@@ -16,14 +16,14 @@ class StoreLetterTemplateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title'          => 'required|string|max:255',
-            'body'           => 'required|string',
-            'logo_asset_id'  => 'nullable|exists:letter_assets,id',
-            'kop_asset_id'   => 'nullable|exists:letter_assets,id',
-            'ttd_asset_id'   => 'nullable|exists:letter_assets,id',
+            'title' => 'required|string|max:255',
+            'body' => 'required|string',
+            'logo_asset_id' => 'nullable|exists:letter_assets,id',
+            'kop_asset_id' => 'nullable|exists:letter_assets,id',
+            'ttd_asset_id' => 'nullable|exists:letter_assets,id',
             'sig_text_above' => 'nullable|string|max:255',
-            'sig_name'       => 'nullable|string|max:255',
-            'sig_position'   => 'nullable|string|max:255',
+            'sig_name' => 'nullable|string|max:255',
+            'sig_position' => 'nullable|string|max:255',
         ];
     }
 }

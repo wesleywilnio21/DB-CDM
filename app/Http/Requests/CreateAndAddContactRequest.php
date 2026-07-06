@@ -16,11 +16,11 @@ class CreateAndAddContactRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'         => 'required|string|max:255',
-            'phone'        => 'required|string|max:255',
-            'email'        => 'nullable|email|max:255',
+            'name' => 'required|string|max:255',
+            'phone' => 'required|numeric|unique:contact_phones,phone',
+            'email' => 'nullable|email|max:255',
             'organization' => 'nullable|string|max:255',
-            'guest_count'  => 'nullable|integer|min:0',
+            'guest_count' => 'nullable|integer|min:0',
         ];
     }
 }

@@ -23,13 +23,13 @@ class EventService
     public function createAndAddContact(Event $event, array $data): Contact
     {
         $contact = Contact::create([
-            'name'         => $data['name'],
-            'email'        => $data['email'] ?? null,
+            'name' => $data['name'],
+            'email' => $data['email'] ?? null,
             'organization' => $data['organization'] ?? null,
         ]);
 
         $contact->phones()->create([
-            'phone'      => $data['phone'],
+            'phone' => $data['phone'],
             'is_primary' => true,
         ]);
 

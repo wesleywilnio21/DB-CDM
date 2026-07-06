@@ -21,10 +21,18 @@
                                 <x-input-error :messages="$errors->get('name')" class="mt-2" />
                             </div>
 
-                            <div>
-                                <x-input-label for="phone" :value="__('Phone (Unique)')" />
-                                <x-text-input id="phone" class="block mt-1 w-full" type="text" name="phone" :value="old('phone', $contact->phone)" required />
-                                <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+                            <div x-data="{ editPhones: {{ json_encode(old('phones', $contact->phones->pluck('phone')->toArray() ?: [''])) }} }">
+                                <x-input-label :value="__('Phones *')" />
+                                <template x-for="(phone, index) in editPhones" :key="index">
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <x-text-input :id="'phone_' + index" class="block w-full" type="text" ::name="'phones['+index+']'" x-model="editPhones[index]" required />
+                                        <button type="button" @click="if(editPhones.length > 1) editPhones.splice(index, 1)" class="p-2 text-red-500 hover:text-red-700" x-show="editPhones.length > 1">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        </button>
+                                    </div>
+                                </template>
+                                <button type="button" @click="editPhones.push('')" class="mt-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium">+ Add another phone</button>
+                                <x-input-error :messages="$errors->get('phones')" class="mt-2" />
                             </div>
 
                             <div>

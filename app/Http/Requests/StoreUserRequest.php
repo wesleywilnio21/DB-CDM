@@ -17,11 +17,11 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'     => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
-            'email'    => ['nullable', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role'     => ['required', 'string', 'in:super_admin,admin'],
+            'role' => ['required', 'string', 'in:super_admin,admin'],
         ];
     }
 }

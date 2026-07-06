@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateContactRequest extends FormRequest
 {
@@ -18,7 +19,12 @@ class UpdateContactRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'phones' => 'required|array|min:1',
-            'phones.*' => 'required|string|max:255',
+            'phones.*' => [
+                'required',
+                'numeric',
+                'distinct',
+                Rule::unique('contact_phones', 'phone')->whereNot('contact_id', $this->route('contact')->id),
+            ],
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'organization' => 'nullable|string|max:255',
@@ -28,6 +34,13 @@ class UpdateContactRequest extends FormRequest
             'tags.*' => 'exists:tags,id',
             'events' => 'nullable|array',
             'events.*' => 'exists:events,id',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'phones.*' => 'phone number',
         ];
     }
 }

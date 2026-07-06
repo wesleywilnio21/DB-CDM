@@ -16,8 +16,18 @@
         viewContactDetails: {},
         deleteUrl: '',
         deleteContactName: '',
-        editContact: { id: '', name: '', phones: [''], email: '', organization: '', address: '', notes: '', birthdate: '', tags: [] },
-        createPhones: [''],
+        editContact: { 
+            id: '{{ old('id') }}', 
+            name: '{{ old('name') }}', 
+            phones: {{ json_encode(old('phones', [''])) }}, 
+            email: '{{ old('email') }}', 
+            organization: '{{ old('organization') }}', 
+            address: '{{ old('address') }}', 
+            notes: '{{ old('notes') }}', 
+            birthdate: '{{ old('birthdate') }}', 
+            tags: {{ json_encode(old('tags', [])) }} 
+        },
+        createPhones: {{ json_encode(old('phones', [''])) }},
         eventsContact: { id: '', name: '', events: [] }
     }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -160,11 +170,15 @@
                                                     Edit
                                                 </button>
 
-                                                <button @click="
-                                                        deleteUrl = '{{ route('contacts.destroy', $contact) }}';
-                                                        deleteContactName = '{{ addslashes($contact->name) }}';
-                                                        showDelete = true;
-                                                    " class="text-red-500 hover:text-red-700 transition-colors">Delete</button>
+                                                @if(Auth::user()->isSuperAdmin())
+                                                <button type="button" @click="$dispatch('open-modal', 'delete-contact-{{ $contact->id }}')" class="text-red-500 hover:text-red-700 transition-colors">Delete</button>
+                                                <x-modal.delete 
+                                                    name="delete-contact-{{ $contact->id }}"
+                                                    title="Delete Contact"
+                                                    message="Are you sure you want to delete {{ $contact->name }}? This action cannot be undone and will remove all associated data."
+                                                    action="{{ route('contacts.destroy', $contact) }}"
+                                                />
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -279,14 +293,14 @@
                                                     <label class="block text-sm font-medium text-gray-700 mb-1">Phones <span class="text-red-500">*</span></label>
                                                     <template x-for="(phone, index) in createPhones" :key="index">
                                                         <div class="flex items-center gap-2 mb-2">
-                                                            <input type="text" :name="'phones['+index+']'" x-model="createPhones[index]" required class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-gray-900" placeholder="Phone Number" />
+                                                            <input type="number" :name="'phones['+index+']'" x-model="createPhones[index]" required class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-gray-900" placeholder="Phone Number" />
                                                             <button type="button" @click="if(createPhones.length > 1) createPhones.splice(index, 1)" class="p-2 text-red-500 hover:text-red-700" x-show="createPhones.length > 1">
                                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                                             </button>
                                                         </div>
                                                     </template>
                                                     <button type="button" @click="createPhones.push('')" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">+ Add another phone</button>
-                                                    <x-input-error :messages="$errors->get('phones')" class="mt-1" />
+                                                    <x-input-error :messages="array_merge($errors->get('phones'), collect($errors->get('phones.*'))->flatten()->all())" class="mt-1" />
                                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -355,9 +369,10 @@
                                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        <form method="POST" :action="`/contacts/${editContact.id}`">
+                        <form id="editContactForm" method="POST" :action="`/contacts/${editContact.id}`">
                             @csrf
                             @method('PATCH')
+                            <input type="hidden" name="id" x-model="editContact.id" />
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
@@ -368,14 +383,14 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Phones <span class="text-red-500">*</span></label>
                                     <template x-for="(phone, index) in editContact.phones" :key="index">
                                         <div class="flex items-center gap-2 mb-2">
-                                            <input type="text" :name="'phones['+index+']'" x-model="editContact.phones[index]" required class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-gray-900" />
+                                            <input type="number" :name="'phones['+index+']'" x-model="editContact.phones[index]" required class="block w-full border-gray-200 focus:border-gray-400 focus:ring-0 rounded-xl shadow-sm text-sm text-gray-900" />
                                             <button type="button" @click="if(editContact.phones.length > 1) editContact.phones.splice(index, 1)" class="p-2 text-red-500 hover:text-red-700" x-show="editContact.phones.length > 1">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>
                                         </div>
                                     </template>
                                     <button type="button" @click="editContact.phones.push('')" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">+ Add another phone</button>
-                                    <x-input-error :messages="$errors->get('phones')" class="mt-1" />
+                                    <x-input-error :messages="array_merge($errors->get('phones'), collect($errors->get('phones.*'))->flatten()->all())" class="mt-1" />
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -418,7 +433,7 @@
                             </div>
                             <div class="mt-8 flex justify-end gap-3">
                                 <button type="button" @click="showEdit = false" class="px-5 py-2.5 border border-gray-200 rounded-full font-medium text-sm text-gray-700 hover:bg-gray-50 focus:outline-none transition-all shadow-sm">Cancel</button>
-                                <button type="submit" class="px-5 py-2.5 bg-gray-900 border border-transparent rounded-full font-medium text-sm text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all shadow-sm">Update Contact</button>
+                                <button type="button" @click="$dispatch('open-modal', 'confirm-edit-contact')" class="px-5 py-2.5 bg-gray-900 border border-transparent rounded-full font-medium text-sm text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-all shadow-sm">Update Contact</button>
                             </div>
                         </form>
                     </div>
@@ -456,13 +471,15 @@
                             @forelse($tags as $tag)
                                 <div class="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-gray-50/50">
                                     <span class="text-sm font-medium text-gray-700">{{ $tag->name }}</span>
-                                    <form action="{{ route('tags.destroy', $tag) }}" method="POST" onsubmit="return confirm('Delete this tag?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-500 hover:text-red-700 p-1">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                        </button>
-                                    </form>
+                                    <button type="button" x-on:click="$dispatch('open-modal', 'delete-tag-{{ $tag->id }}')" class="text-red-500 hover:text-red-700 p-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                    <x-modal.delete 
+                                        name="delete-tag-{{ $tag->id }}"
+                                        title="Delete Tag: {{ $tag->name }}"
+                                        message="Are you sure you want to delete this tag? Jika tag dihapus, maka tag ini akan otomatis terhapus sebagai penanda di kontak-kontak yang menggunakan tag tersebut."
+                                        action="{{ route('tags.destroy', $tag) }}"
+                                    />
                                 </div>
                             @empty
                                 <p class="text-sm text-gray-500 text-center py-4">No tags created yet.</p>
@@ -582,36 +599,12 @@
             </div>
         </div>
 
-        <!-- Delete Confirmation Modal -->
-        <div x-show="showDelete" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
-            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-                <div x-show="showDelete" x-transition.opacity class="fixed inset-0 transition-opacity" aria-hidden="true">
-                    <div class="absolute inset-0 bg-gray-900 opacity-50"></div>
-                </div>
-
-                <div x-show="showDelete" x-transition.scale.origin.bottom class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full">
-                    <div class="bg-white px-6 pt-5 pb-4 sm:p-6 sm:pb-4 text-center">
-                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-5">
-                            <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        </div>
-                        <h3 class="text-xl leading-6 font-bold text-gray-900 mb-2">Delete Contact</h3>
-                        <p class="text-sm text-gray-500 mb-6">
-                            Are you sure you want to delete <strong class="text-gray-900" x-text="deleteContactName"></strong>? This action cannot be undone and will remove all associated data.
-                        </p>
-                        
-                        <form :action="deleteUrl" method="POST" class="flex justify-center gap-3 w-full">
-                            @csrf
-                            @method('DELETE')
-                            <button type="button" @click="showDelete = false" class="w-1/2 px-4 py-3 border border-gray-300 rounded-xl font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition-all">
-                                Cancel
-                            </button>
-                            <button type="submit" class="w-1/2 px-4 py-3 border border-transparent rounded-xl font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none transition-all shadow-sm">
-                                Delete
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-modal.confirm 
+            name="confirm-edit-contact" 
+            title="Save Contact Changes" 
+            message="Are you sure you want to save changes to this contact?"
+            confirmText="Save Changes"
+            formId="editContactForm" 
+        />
     </div>
 </x-app-layout>

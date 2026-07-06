@@ -36,6 +36,7 @@
                                 <x-dropdown-link :href="route('events.index')">
                                     {{ __('Events') }}
                                 </x-dropdown-link>
+                                @if(Auth::user()->isSuperAdmin())
                                 <x-dropdown-link :href="route('letter-templates.index')">
                                     {{ __('Letter Templates') }}
                                 </x-dropdown-link>
@@ -43,6 +44,7 @@
                                 <x-dropdown-link :href="route('letter-assets.index')">
                                     {{ __('Letter Assets') }}
                                 </x-dropdown-link>
+                                @endif
                             </x-slot>
                         </x-dropdown>
                     </div>
@@ -71,7 +73,7 @@
                         </x-dropdown>
                     </div>
 
-                    @if(Auth::user()->isAdmin())
+                    @if(Auth::user()->isSuperAdmin())
                     <!-- Admin Dropdown -->
                     <div class="hidden sm:flex">
                         <x-dropdown align="left" width="48">
@@ -92,12 +94,10 @@
                                 <x-dropdown-link :href="route('settings.organization')">
                                     {{ __('Organization Settings') }}
                                 </x-dropdown-link>
-                                @if(Auth::user()->isSuperAdmin())
                                 <hr class="border-gray-100 my-1">
                                 <x-dropdown-link :href="route('users.index')">
                                     {{ __('User Management') }}
                                 </x-dropdown-link>
-                                @endif
                             </x-slot>
                         </x-dropdown>
                     </div>
@@ -165,12 +165,14 @@
             <x-responsive-nav-link :href="route('events.index')" :active="request()->routeIs('events.*')" class="pl-8 border-l-4 border-transparent hover:border-gray-300">
                 {{ __('Events') }}
             </x-responsive-nav-link>
+            @if(Auth::user()->isSuperAdmin())
             <x-responsive-nav-link :href="route('letter-templates.index')" :active="request()->routeIs('letter-templates.*')" class="pl-8 border-l-4 border-transparent hover:border-gray-300">
                 {{ __('Letter Templates') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('letter-assets.index')" :active="request()->routeIs('letter-assets.*')" class="pl-8 border-l-4 border-transparent hover:border-gray-300">
                 {{ __('Letter Assets') }}
             </x-responsive-nav-link>
+            @endif
 
             <div class="px-4 py-2 mt-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Blood Donor</div>
             <x-responsive-nav-link :href="route('blood-donors.index')" :active="request()->routeIs('blood-donors.*')" class="pl-8 border-l-4 border-transparent hover:border-gray-300">
@@ -180,19 +182,23 @@
                 {{ __('Donor Sessions') }}
             </x-responsive-nav-link>
 
-            @if(Auth::user()->isAdmin())
-            <div class="px-4 py-2 mt-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Admin</div>
-            <x-responsive-nav-link :href="route('activity-logs.index')" :active="request()->routeIs('activity-logs.*')" class="pl-8 border-l-4 border-transparent hover:border-gray-300">
-                {{ __('Activity Log') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('settings.organization')" :active="request()->routeIs('settings.*')" class="pl-8 border-l-4 border-transparent hover:border-gray-300">
-                {{ __('Organization Settings') }}
-            </x-responsive-nav-link>
             @if(Auth::user()->isSuperAdmin())
-            <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')" class="pl-8 border-l-4 border-transparent hover:border-gray-300">
-                {{ __('User Management') }}
-            </x-responsive-nav-link>
-            @endif
+            <div class="pt-4 pb-1 border-t border-gray-200">
+                <div class="px-4 text-sm font-medium text-gray-500 uppercase tracking-wider">
+                    Admin
+                </div>
+                <div class="mt-2 space-y-1">
+                    <x-responsive-nav-link :href="route('activity-logs.index')" :active="request()->routeIs('activity-logs.*')">
+                        {{ __('Activity Log') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('settings.organization')" :active="request()->routeIs('settings.*')">
+                        {{ __('Organization Settings') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                        {{ __('User Management') }}
+                    </x-responsive-nav-link>
+                </div>
+            </div>
             @endif
         </div>
 

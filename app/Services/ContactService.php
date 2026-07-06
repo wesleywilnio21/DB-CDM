@@ -44,7 +44,7 @@ class ContactService
     public function updateContact(Contact $contact, array $data, ?array $phones, ?array $tags, ?array $events): Contact
     {
         return DB::transaction(function () use ($contact, $data, $phones, $tags, $events) {
-            $oldData           = $contact->only(['name', 'email', 'organization']);
+            $oldData = $contact->only(['name', 'email', 'organization']);
             $oldData['phones'] = $contact->phones->pluck('phone')->toArray();
 
             $contact->update($data);
@@ -60,7 +60,7 @@ class ContactService
             $contact->tags()->sync($tags ?? []);
             $contact->events()->sync($events ?? []);
 
-            $newData           = $contact->only(['name', 'email', 'organization']);
+            $newData = $contact->only(['name', 'email', 'organization']);
             $newData['phones'] = $phones ?? [];
 
             ActivityLogger::log('updated', $contact, "Updated contact: {$contact->name}", [

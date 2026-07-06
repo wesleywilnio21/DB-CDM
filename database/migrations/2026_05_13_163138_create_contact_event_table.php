@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('contact_id')->constrained()->onDelete('cascade');
             $table->foreignId('event_id')->constrained()->onDelete('cascade');
+            $table->integer('guest_count')->nullable();
             $table->timestamps();
         });
     }

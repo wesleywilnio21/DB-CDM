@@ -24,7 +24,7 @@ class DonationSessionService
         foreach ($donorIds as $donorId) {
             $syncData[$donorId] = [
                 'donated_at' => $session->session_date,
-                'location'   => $session->location,
+                'location' => $session->location,
             ];
         }
 
@@ -47,15 +47,15 @@ class DonationSessionService
             $contact->phones()->create(['phone' => $data['phone'], 'is_primary' => true]);
 
             $donor = BloodDonor::create([
-                'contact_id'         => $contact->id,
-                'blood_type'         => $data['blood_type'],
-                'rhesus'             => $data['rhesus'],
+                'contact_id' => $contact->id,
+                'blood_type' => $data['blood_type'],
+                'rhesus' => $data['rhesus'],
                 'last_donation_date' => $session->session_date,
             ]);
 
             $session->donors()->attach($donor->id, [
                 'donated_at' => $session->session_date,
-                'location'   => $session->location,
+                'location' => $session->location,
             ]);
 
             return $donor;

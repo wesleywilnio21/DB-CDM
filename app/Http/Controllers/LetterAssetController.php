@@ -16,7 +16,9 @@ class LetterAssetController extends Controller
 {
     public function __construct(
         private readonly LetterAssetService $letterAssetService
-    ) {}
+    ) {
+        $this->authorizeSuperAdmin();
+    }
 
     public function index(Request $request): View
     {

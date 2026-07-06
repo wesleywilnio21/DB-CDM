@@ -13,6 +13,8 @@ class OrganizationSettingController extends Controller
 {
     public function index(): View
     {
+        $this->authorizeSuperAdmin();
+
         $settings = AppSetting::getOrg();
 
         return view('settings.organization', compact('settings'));
@@ -20,6 +22,8 @@ class OrganizationSettingController extends Controller
 
     public function update(UpdateOrganizationSettingRequest $request): RedirectResponse
     {
+        $this->authorizeSuperAdmin();
+
         foreach ($request->validated() as $key => $value) {
             AppSetting::set($key, $value);
         }

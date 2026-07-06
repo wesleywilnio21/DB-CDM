@@ -55,7 +55,7 @@ class DonationSessionController extends Controller
         $this->donationSessionService->addDonors($donationSession, $donorIds);
 
         return redirect()->route('donation-sessions.show', $donationSession)
-            ->with('success', count($donorIds) . ' donors added successfully.');
+            ->with('success', count($donorIds).' donors added successfully.');
     }
 
     public function removeDonor(DonationSession $donationSession, BloodDonor $donor): RedirectResponse
@@ -78,6 +78,8 @@ class DonationSessionController extends Controller
 
     public function destroy(DonationSession $donationSession): RedirectResponse
     {
+        $this->authorizeSuperAdmin();
+
         $donationSession->delete();
 
         return redirect()->route('donation-sessions.index')->with('success', 'Session deleted.');

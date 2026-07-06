@@ -11,13 +11,30 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('event_letters', function (Blueprint $table) {
+        Schema::create('event_letters', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('event_id')->constrained()->cascadeOnDelete();
+            $table->string('letter_number')->nullable();
+            $table->unsignedInteger('letter_sequence')->nullable();
+            $table->string('title');
+            $table->string('recipient_name');
+            $table->string('recipient_phone')->nullable();
+            $table->longText('body');
+            $table->date('issued_at')->nullable();
+            $table->string('city')->nullable();
+
+            // Assets (nullable)
             $table->foreignId('logo_asset_id')->nullable()->constrained('letter_assets')->nullOnDelete();
             $table->foreignId('kop_asset_id')->nullable()->constrained('letter_assets')->nullOnDelete();
             $table->foreignId('ttd_asset_id')->nullable()->constrained('letter_assets')->nullOnDelete();
+            $table->string('signature_path')->nullable();
+
+            // Signature details
             $table->string('sig_text_above')->nullable();
             $table->string('sig_name')->nullable();
             $table->string('sig_position')->nullable();
+
+            $table->timestamps();
         });
     }
 
@@ -26,18 +43,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('event_letters', function (Blueprint $table) {
-            $table->dropForeign(['logo_asset_id']);
-            $table->dropForeign(['kop_asset_id']);
-            $table->dropForeign(['ttd_asset_id']);
-            $table->dropColumn([
-                'logo_asset_id',
-                'kop_asset_id',
-                'ttd_asset_id',
-                'sig_text_above',
-                'sig_name',
-                'sig_position',
-            ]);
-        });
+        Schema::dropIfExists('event_letters');
     }
 };

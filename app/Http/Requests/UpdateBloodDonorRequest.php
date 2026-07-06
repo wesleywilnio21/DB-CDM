@@ -16,8 +16,8 @@ class UpdateBloodDonorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'blood_type'         => 'required|in:A,B,AB,O',
-            'rhesus'             => 'required|in:+,-',
+            'blood_type' => 'required|in:A,B,AB,O',
+            'rhesus' => 'required|in:+,-',
             'last_donation_date' => 'nullable|date',
         ];
     }

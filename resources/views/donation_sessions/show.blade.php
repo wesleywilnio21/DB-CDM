@@ -57,30 +57,45 @@
                 
                 <div class="p-6">
                     @if($donationSession->donors->count() > 0)
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            @foreach($donationSession->donors as $donor)
-                                <div class="relative flex flex-col p-4 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-md transition-all group">
-                                    
-                                    <!-- Delete Button (Top Right) -->
-                                    <form action="{{ route('donation-sessions.remove-donor', [$donationSession, $donor]) }}" method="POST" class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" onclick="return confirm('Remove this donor from session?')" class="text-gray-400 hover:text-red-500 transition-colors bg-white rounded-full p-1 shadow-sm border border-gray-100">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        </button>
-                                    </form>
-
-                                    <div class="flex items-center mb-3">
-                                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center text-red-700 font-bold text-lg">
-                                            {{ $donor->blood_type }}{{ $donor->rhesus }}
-                                        </div>
-                                        <div class="ml-3 flex-1 overflow-hidden">
-                                            <a href="{{ route('contacts.show', $donor->contact) }}" class="text-sm font-bold text-gray-900 hover:text-red-600 transition-colors truncate block">{{ $donor->contact->name }}</a>
-                                            <div class="text-xs text-gray-500 truncate">{{ $donor->contact->phone }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
+                        <div class="overflow-x-auto border border-gray-200 rounded-xl">
+                            <table class="min-w-full divide-y divide-gray-200 text-left text-sm whitespace-nowrap">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3 font-semibold text-gray-900">Name</th>
+                                        <th scope="col" class="px-4 py-3 font-semibold text-gray-900 text-center">Blood Type</th>
+                                        <th scope="col" class="px-4 py-3 font-semibold text-gray-900">Phone</th>
+                                        <th scope="col" class="px-4 py-3 font-semibold text-gray-900 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 bg-white">
+                                    @foreach($donationSession->donors as $donor)
+                                        <tr class="hover:bg-gray-50/50 transition-colors even:bg-gray-50/30">
+                                            <td class="px-4 py-2">
+                                                <a href="{{ route('contacts.show', $donor->contact) }}" class="font-bold text-gray-900 hover:text-red-600 transition-colors">
+                                                    {{ $donor->contact->name }}
+                                                </a>
+                                            </td>
+                                            <td class="px-4 py-2 text-center">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800">
+                                                    {{ $donor->blood_type }}{{ $donor->rhesus }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-2 text-gray-500">
+                                                {{ $donor->contact->phone ?: '-' }}
+                                            </td>
+                                            <td class="px-4 py-2 text-right">
+                                                <form action="{{ route('donation-sessions.remove-donor', [$donationSession, $donor]) }}" method="POST" class="inline-block">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" onclick="return confirm('Remove this donor from session?')" class="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50" title="Remove donor">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     @else
                         <div class="text-center py-12 text-gray-500 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
@@ -158,16 +173,16 @@
                                 <div class="space-y-4 mb-6">
                                     <div>
                                         <label class="block text-sm font-semibold text-gray-900 mb-1">Full Name <span class="text-red-500">*</span></label>
-                                        <input type="text" name="name" required class="w-full border-gray-200 focus:border-red-500 rounded-xl shadow-sm text-sm">
+                                        <input type="text" name="name" required placeholder="Full Name" class="w-full border-gray-200 focus:border-red-500 rounded-xl shadow-sm text-sm text-black placeholder:text-gray-400">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-semibold text-gray-900 mb-1">Phone Number <span class="text-red-500">*</span></label>
-                                        <input type="text" name="phone" required class="w-full border-gray-200 focus:border-red-500 rounded-xl shadow-sm text-sm">
+                                        <input type="number" name="phone" required placeholder="Phone Number" class="w-full border-gray-200 focus:border-red-500 rounded-xl shadow-sm text-sm text-black placeholder:text-gray-400">
                                     </div>
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-900 mb-1">Blood Type <span class="text-red-500">*</span></label>
-                                            <select name="blood_type" required class="w-full border-gray-200 focus:border-red-500 rounded-xl shadow-sm text-sm">
+                                            <select name="blood_type" required class="w-full border-gray-200 focus:border-red-500 rounded-xl shadow-sm text-sm text-black">
                                                 <option value="A">A</option>
                                                 <option value="B">B</option>
                                                 <option value="AB">AB</option>
@@ -176,7 +191,7 @@
                                         </div>
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-900 mb-1">Rhesus <span class="text-red-500">*</span></label>
-                                            <select name="rhesus" required class="w-full border-gray-200 focus:border-red-500 rounded-xl shadow-sm text-sm">
+                                            <select name="rhesus" required class="w-full border-gray-200 focus:border-red-500 rounded-xl shadow-sm text-sm text-black">
                                                 <option value="+">+</option>
                                                 <option value="-">-</option>
                                             </select>

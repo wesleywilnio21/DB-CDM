@@ -16,12 +16,12 @@ class StoreBloodDonorWithContactRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'               => 'required|string|max:255',
-            'phone'              => 'required|string|max:255|unique:contacts',
-            'email'              => 'nullable|email|max:255',
-            'organization'       => 'nullable|string|max:255',
-            'blood_type'         => 'required|in:A,B,AB,O',
-            'rhesus'             => 'required|in:+,-',
+            'name' => 'required|string|max:255',
+            'phone' => 'required|numeric|unique:contact_phones,phone',
+            'email' => 'nullable|email|max:255',
+            'organization' => 'nullable|string|max:255',
+            'blood_type' => 'required|in:A,B,AB,O',
+            'rhesus' => 'required|in:+,-',
             'last_donation_date' => 'nullable|date',
         ];
     }

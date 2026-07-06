@@ -37,7 +37,7 @@ class EventLetterService
 
         if ($file !== null) {
             $spreadsheet = IOFactory::load($file->getRealPath());
-            $sheet       = $spreadsheet->getActiveSheet();
+            $sheet = $spreadsheet->getActiveSheet();
 
             foreach ($sheet->getRowIterator() as $row) {
                 $cellIterator = $row->getCellIterator();
@@ -100,41 +100,41 @@ class EventLetterService
     public function bulkGenerate(Event $event, LetterTemplate $template, Collection $names): string
     {
         $orgSettings = AppSetting::getOrg();
-        $zipPath     = storage_path('app/private/Bulk_Letters_' . time() . '.zip');
-        $zip         = new ZipArchive;
+        $zipPath = storage_path('app/private/Bulk_Letters_'.time().'.zip');
+        $zip = new ZipArchive;
 
         $zip->open($zipPath, ZipArchive::CREATE);
 
         foreach ($names as $name) {
             $generated = $this->generateForEvent($event, null);
-            $body      = str_replace('{nama}', $name, $template->body);
+            $body = str_replace('{nama}', $name, $template->body);
 
             $letter = new EventLetter([
-                'event_id'        => $event->id,
-                'title'           => $template->title,
-                'recipient_name'  => $name,
+                'event_id' => $event->id,
+                'title' => $template->title,
+                'recipient_name' => $name,
                 'recipient_phone' => null,
-                'body'            => $body,
-                'issued_at'       => now(),
-                'city'            => $orgSettings['city_default'] ?? 'Jakarta',
-                'logo_asset_id'   => $template->logo_asset_id,
-                'kop_asset_id'    => $template->kop_asset_id,
-                'ttd_asset_id'    => $template->ttd_asset_id,
-                'sig_text_above'  => $template->sig_text_above,
-                'sig_name'        => $template->sig_name,
-                'sig_position'    => $template->sig_position,
-                'letter_number'   => $generated['letter_number'],
+                'body' => $body,
+                'issued_at' => now(),
+                'city' => $orgSettings['city_default'] ?? 'Jakarta',
+                'logo_asset_id' => $template->logo_asset_id,
+                'kop_asset_id' => $template->kop_asset_id,
+                'ttd_asset_id' => $template->ttd_asset_id,
+                'sig_text_above' => $template->sig_text_above,
+                'sig_name' => $template->sig_name,
+                'sig_position' => $template->sig_position,
+                'letter_number' => $generated['letter_number'],
                 'letter_sequence' => $generated['sequence'],
             ]);
             $letter->save();
 
-            $pdf        = Pdf::loadView('events.letters.pdf', [
-                'event'       => $event,
-                'letter'      => $letter,
+            $pdf = Pdf::loadView('events.letters.pdf', [
+                'event' => $event,
+                'letter' => $letter,
                 'orgSettings' => $orgSettings,
             ]);
-            $safeName   = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $name);
-            $filename   = 'Surat_' . $safeName . '_' . $generated['sequence'] . '.pdf';
+            $safeName = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $name);
+            $filename = 'Surat_'.$safeName.'_'.$generated['sequence'].'.pdf';
             $zip->addFromString($filename, $pdf->output());
         }
 

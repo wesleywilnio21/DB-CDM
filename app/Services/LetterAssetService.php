@@ -19,12 +19,12 @@ class LetterAssetService
     {
         $path = $file->store('letter_assets');
 
-        $this->resizeIfNeeded(storage_path('app/private/' . $path));
+        $this->resizeIfNeeded(storage_path('app/private/'.$path));
 
         return LetterAsset::create([
-            'type'       => $data['type'],
-            'name'       => $data['name'],
-            'file_path'  => $path,
+            'type' => $data['type'],
+            'name' => $data['name'],
+            'file_path' => $path,
             'created_by' => auth()->id(),
         ]);
     }
@@ -36,14 +36,14 @@ class LetterAssetService
     {
         try {
             $manager = new ImageManager(new Driver);
-            $image   = $manager->decodePath($absolutePath);
+            $image = $manager->decodePath($absolutePath);
 
             if ($image->width() > 800) {
                 $image->scale(width: 800);
                 $image->save($absolutePath);
             }
         } catch (\Exception $e) {
-            Log::error('Image resize failed: ' . $e->getMessage());
+            Log::error('Image resize failed: '.$e->getMessage());
         }
     }
 }

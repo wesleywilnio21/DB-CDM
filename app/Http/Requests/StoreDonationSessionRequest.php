@@ -17,8 +17,8 @@ class StoreDonationSessionRequest extends FormRequest
     {
         return [
             'session_date' => 'required|date',
-            'location'     => 'nullable|string|max:255',
-            'notes'        => 'nullable|string',
+            'location' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
         ];
     }
 }

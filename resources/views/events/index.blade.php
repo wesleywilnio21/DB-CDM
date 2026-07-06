@@ -37,7 +37,9 @@
                                     <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Event Details</th>
                                     <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date & Location</th>
                                     <th scope="col" class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Participants</th>
+                                    @if(Auth::user()->isSuperAdmin())
                                     <th scope="col" class="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Letters</th>
+                                    @endif
                                     <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
@@ -60,21 +62,25 @@
                                                 {{ $event->contacts_count + ($event->guests_count ?? 0) }}
                                             </span>
                                         </td>
+                                        @if(Auth::user()->isSuperAdmin())
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <a href="{{ route('letters.index', $event) }}" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100 transition-colors">
                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                                                 {{ $event->letters_count }}
                                             </a>
                                         </td>
+                                        @endif
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div class="flex items-center justify-end gap-3">
                                                 <a href="{{ route('events.show', $event) }}" class="text-gray-500 hover:text-gray-900 transition-colors font-semibold">Details</a>
                                                 
+                                                @if(Auth::user()->isSuperAdmin())
                                                 <button @click="
                                                         deleteUrl = '{{ route('events.destroy', $event) }}';
                                                         deleteEventName = '{{ addslashes($event->name) }}';
                                                         showDelete = true;
                                                     " class="text-red-500 hover:text-red-700 transition-colors">Delete</button>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
