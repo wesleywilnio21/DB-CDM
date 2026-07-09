@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\EventLetter;
 use App\Models\LetterTemplate;
 use App\Models\Tag;
+use App\Services\EventLetterService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -19,6 +20,8 @@ class DummyDataSeeder extends Seeder
      */
     public function run(): void
     {
+        $eventLetterService = app(EventLetterService::class);
+
         // 1. Create Tags
         $tags = collect(['Donatur Tetap', 'Relawan', 'Sponsor', 'VIP', 'Medis'])->map(function ($tagName) {
             return Tag::firstOrCreate(['name' => $tagName]);
@@ -194,7 +197,7 @@ class DummyDataSeeder extends Seeder
                 ->first();
             if (! $existing) {
                 $event = Event::find($letterData['event_id']);
-                $generated = EventLetter::generateForEvent($event);
+                $generated = $eventLetterService->generateForEvent($event);
 
                 EventLetter::create([
                     'event_id' => $event->id,
