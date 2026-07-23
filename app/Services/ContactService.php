@@ -58,7 +58,9 @@ class ContactService
             }
 
             $contact->tags()->sync($tags ?? []);
-            $contact->events()->sync($events ?? []);
+            if ($events !== null) {
+                $contact->events()->sync($events);
+            }
 
             $newData = $contact->only(['name', 'email', 'organization']);
             $newData['phones'] = $phones ?? [];
